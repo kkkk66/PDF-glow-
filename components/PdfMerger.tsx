@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, File as FileIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { Upload, X, File as FileIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { mergePdfs, downloadPdfBlob } from '../utils/pdfHelpers';
 
@@ -19,7 +19,6 @@ export const PdfMerger: React.FC = () => {
       setFiles(prev => [...prev, ...newFiles]);
       setErrorMessage(null);
       setStatus(MergeStatus.IDLE);
-      // Reset input so same file can be selected again if needed (after removal)
       event.target.value = '';
     }
   };
@@ -30,6 +29,18 @@ export const PdfMerger: React.FC = () => {
     setStatus(MergeStatus.IDLE);
   };
 
+  const moveFile = (index: number, direction: 'up' | 'down') => {
+    setFiles(prev => {
+        const newFiles = [...prev];
+        if (direction === 'up' && index > 0) {
+            [newFiles[index], newFiles[index - 1]] = [newFiles[index - 1], newFiles[index]];
+        } else if (direction === 'down' && index < newFiles.length - 1) {
+            [newFiles[index], newFiles[index + 1]] = [newFiles[index + 1], newFiles[index]];
+        }
+        return newFiles;
+    });
+  };
+
   const handleMerge = async () => {
     if (files.length < 2) return;
     
@@ -37,7 +48,6 @@ export const PdfMerger: React.FC = () => {
     setErrorMessage(null);
     
     try {
-      // 100% Client side coding. No AI.
       const rawFiles = files.map(f => f.file);
       const mergedBytes = await mergePdfs(rawFiles);
       
@@ -65,9 +75,7 @@ export const PdfMerger: React.FC = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Tool Card */}
       <div className="bg-white rounded-3xl shadow-pink-glow-card border border-glow-100 overflow-hidden relative">
-        {/* Glow Effects Background */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-glow-200 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-200 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
 
@@ -78,12 +86,11 @@ export const PdfMerger: React.FC = () => {
               Combine multiple PDFs into one unified document. 
               <br/>
               <span className="text-glow-600 font-semibold bg-glow-50 px-2 py-0.5 rounded-full text-xs mt-2 inline-block">
-                100% Client-Side Processing • No AI • Secure
+                100% Client-Side Processing
               </span>
             </p>
           </div>
 
-          {/* Success State */}
           {status === MergeStatus.SUCCESS ? (
             <div className="flex flex-col items-center justify-center py-8 md:py-12 animate-fade-in">
               <div className="w-16 h-16 md:w-20 md:h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
@@ -111,7 +118,6 @@ export const PdfMerger: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Error Banner */}
               {status === MergeStatus.ERROR && errorMessage && (
                 <div className="mb-6 md:mb-8 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 text-red-700 animate-fade-in shadow-sm">
                   <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
@@ -125,7 +131,6 @@ export const PdfMerger: React.FC = () => {
                 </div>
               )}
 
-              {/* Upload Area */}
               <div 
                 className={`border-3 border-dashed rounded-3xl transition-all duration-300 ${
                   files.length > 0 
@@ -161,8 +166,24 @@ export const PdfMerger: React.FC = () => {
                         </div>
                         <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                           {files.map((item, index) => (
-                            <div key={item.id} className="flex items-center justify-between bg-white p-3 md:p-4 rounded-xl border border-gray-100 shadow-sm animate-slide-up">
+                            <div key={item.id} className="flex items-center justify-between bg-white p-3 md:p-4 rounded-xl border border-gray-100 shadow-sm animate-slide-up group">
                               <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                                <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={() => moveFile(index, 'up')} 
+                                        disabled={index === 0}
+                                        className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                    >
+                                        <ArrowUp size={14} />
+                                    </button>
+                                    <button 
+                                        onClick={() => moveFile(index, 'down')} 
+                                        disabled={index === files.length - 1}
+                                        className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                    >
+                                        <ArrowDown size={14} />
+                                    </button>
+                                </div>
                                 <div className="w-8 h-8 md:w-10 md:h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
                                   <FileIcon className="text-red-500 w-4 h-4 md:w-5 md:h-5" />
                                 </div>
@@ -194,7 +215,6 @@ export const PdfMerger: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Bar */}
               {files.length > 0 && (
                 <div className="mt-8 flex justify-center">
                   <button 

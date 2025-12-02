@@ -1,13 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, File as FileIcon, PenTool, Highlighter, Type, Eraser, Download, ChevronLeft, ChevronRight, Save, Loader2, Undo, CheckCircle, AlertCircle } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
-import { saveAnnotatedPdf, AnnotationPath, AnnotationText, PageAnnotations, downloadPdfBlob } from '../utils/pdfHelpers';
-import * as pdfjsLibProxy from 'pdfjs-dist';
-
-// Handle ESM import quirks for pdfjs-dist
-const pdfjsLib = (pdfjsLibProxy as any).GlobalWorkerOptions 
-  ? pdfjsLibProxy 
-  : (pdfjsLibProxy as any).default;
+import { saveAnnotatedPdf, AnnotationPath, AnnotationText, PageAnnotations, downloadPdfBlob, pdfjsLib } from '../utils/pdfHelpers';
 
 type Tool = 'pen' | 'highlighter' | 'text' | 'eraser';
 
@@ -19,7 +13,7 @@ export const PdfEditor: React.FC = () => {
   // Editor State
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(0);
-  const [scale, setScale] = useState<number>(1.2); // Default zoom
+  const [scale, setScale] = useState<number>(1.2); 
   const [activeTool, setActiveTool] = useState<Tool>('pen');
   const [color, setColor] = useState<string>('#000000');
   const [lineWidth, setLineWidth] = useState<number>(2);
@@ -48,8 +42,7 @@ export const PdfEditor: React.FC = () => {
         setScale(1.2);
       }
     };
-    handleResize(); // Set initial
-    // window.addEventListener('resize', handleResize); // Optional: auto resize
+    handleResize(); 
   }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,9 +59,15 @@ export const PdfEditor: React.FC = () => {
       setCurrentPage(1);
       
       // Load PDF to get info
-      const arrayBuffer = await selectedFile.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-      setTotalPages(pdf.numPages);
+      try {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        if (!pdfjsLib) throw new Error("PDF Library not initialized");
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        setTotalPages(pdf.numPages);
+      } catch (err) {
+        console.error(err);
+        setErrorMessage("Failed to load PDF. Please try again.");
+      }
       
       event.target.value = '';
     }
@@ -77,7 +76,7 @@ export const PdfEditor: React.FC = () => {
   // Render PDF Page
   useEffect(() => {
     const renderPage = async () => {
-      if (!file || !canvasRef.current) return;
+      if (!file || !canvasRef.current || !pdfjsLib) return;
       
       try {
         const arrayBuffer = await file.file.arrayBuffer();
@@ -306,6 +305,7 @@ export const PdfEditor: React.FC = () => {
           const pageData = prev[pageIndex];
           if (!pageData) return prev;
           
+          // Try to remove last path, if no paths, try removing last text
           const newPaths = [...pageData.paths];
           const newTexts = [...pageData.texts];
           

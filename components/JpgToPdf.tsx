@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle, ArrowLeft } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { convertImagesToPdf, downloadPdfBlob } from '../utils/pdfHelpers';
 
@@ -27,13 +27,24 @@ export const JpgToPdf: React.FC = () => {
   const removeFile = (id: string) => {
     setFiles(prev => {
         const newFiles = prev.filter(f => f.id !== id);
-        // Revoke URL of removed file to avoid memory leak
         const removed = prev.find(f => f.id === id);
         if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
         return newFiles;
     });
     setErrorMessage(null);
     setStatus(MergeStatus.IDLE);
+  };
+
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    setFiles(prev => {
+        const newFiles = [...prev];
+        if (direction === 'left' && index > 0) {
+            [newFiles[index], newFiles[index - 1]] = [newFiles[index - 1], newFiles[index]];
+        } else if (direction === 'right' && index < newFiles.length - 1) {
+            [newFiles[index], newFiles[index + 1]] = [newFiles[index + 1], newFiles[index]];
+        }
+        return newFiles;
+    });
   };
 
   const handleConvert = async () => {
@@ -43,7 +54,6 @@ export const JpgToPdf: React.FC = () => {
     setErrorMessage(null);
     
     try {
-      // 100% Client side coding. No AI.
       const rawFiles = files.map(f => f.file);
       const pdfBytes = await convertImagesToPdf(rawFiles);
       
@@ -63,7 +73,6 @@ export const JpgToPdf: React.FC = () => {
   };
 
   const handleReset = () => {
-    // Cleanup URLs
     files.forEach(f => {
         if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
     });
@@ -75,9 +84,7 @@ export const JpgToPdf: React.FC = () => {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Tool Card */}
       <div className="bg-white rounded-3xl shadow-pink-glow-card border border-glow-100 overflow-hidden relative">
-        {/* Glow Effects Background */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-glow-200 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-200 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
 
@@ -93,7 +100,6 @@ export const JpgToPdf: React.FC = () => {
             </p>
           </div>
 
-          {/* Success State */}
           {status === MergeStatus.SUCCESS ? (
             <div className="flex flex-col items-center justify-center py-12 animate-fade-in">
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
@@ -121,7 +127,6 @@ export const JpgToPdf: React.FC = () => {
             </div>
           ) : (
             <>
-              {/* Error Banner */}
               {status === MergeStatus.ERROR && errorMessage && (
                 <div className="mb-8 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 text-red-700 animate-fade-in shadow-sm">
                   <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
@@ -135,7 +140,6 @@ export const JpgToPdf: React.FC = () => {
                 </div>
               )}
 
-              {/* Upload Area */}
               <div 
                 className={`border-3 border-dashed rounded-3xl transition-all duration-300 ${
                   files.length > 0 
@@ -170,7 +174,6 @@ export const JpgToPdf: React.FC = () => {
                            </button>
                         </div>
                         
-                        {/* Image Grid */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                           {files.map((item, index) => (
                             <div key={item.id} className="relative group rounded-xl overflow-hidden border border-gray-100 shadow-sm bg-white aspect-square animate-fade-in-up">
@@ -183,7 +186,23 @@ export const JpgToPdf: React.FC = () => {
                               )}
                               
                               {/* Overlay */}
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                  <div className="flex gap-2">
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); moveImage(index, 'left'); }}
+                                        disabled={index === 0}
+                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white disabled:opacity-30"
+                                      >
+                                          <ArrowLeft size={14} />
+                                      </button>
+                                      <button 
+                                        onClick={(e) => { e.stopPropagation(); moveImage(index, 'right'); }}
+                                        disabled={index === files.length - 1}
+                                        className="p-1.5 bg-white/20 hover:bg-white/40 rounded-full text-white disabled:opacity-30"
+                                      >
+                                          <ArrowRight size={14} />
+                                      </button>
+                                  </div>
                                   <button 
                                     onClick={() => removeFile(item.id)}
                                     className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors transform hover:scale-110"
@@ -213,7 +232,6 @@ export const JpgToPdf: React.FC = () => {
                 </div>
               </div>
 
-              {/* Action Bar */}
               {files.length > 0 && (
                 <div className="mt-8 flex justify-center">
                   <button 

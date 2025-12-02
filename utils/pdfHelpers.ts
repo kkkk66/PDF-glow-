@@ -5,11 +5,11 @@ import { Document, Packer, Paragraph, TextRun } from 'docx';
 
 // Handle ESM import quirks for pdfjs-dist
 // We explicitly check which object contains the library methods we need
-const pdfjsLib = (pdfjsLibProxy as any).GlobalWorkerOptions 
+export const pdfjsLib = (pdfjsLibProxy as any).GlobalWorkerOptions 
   ? pdfjsLibProxy 
   : (pdfjsLibProxy as any).default;
 
-// Set worker source for PDF.js
+// Set worker source for PDF.js - CENTRALIZED CONFIGURATION
 if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
   // Use CDNJS for the worker script as it is highly reliable and supports CORS correctly for workers
   pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -110,22 +110,14 @@ export const splitPdf = async (file: File): Promise<{ filename: string; data: Ui
 /**
  * Compresses a PDF file by rendering pages to images and re-saving them.
  * This is effective for shrinking scanned documents or image-heavy PDFs.
- * 
- * @param file The input PDF file
- * @param quality Compression quality (0.0 to 1.0). Lower is smaller size.
- * @param scale Scale factor for resolution. 1.0 is standard, 0.8 reduces dimensions.
  */
 export const compressPdf = async (file: File, quality: number = 0.5, scale: number = 0.8): Promise<Uint8Array> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const originalSize = arrayBuffer.byteLength;
     
-    // Load document using PDF.js for rendering
-    // Ensure we use the resolved pdfjsLib object
     if (!pdfjsLib) throw new Error("PDF Library not initialized correctly");
     
-    // Use Uint8Array for PDF.js. 
-    // Note: Passing data to PDF.js worker often transfers the buffer, detaching the original arrayBuffer.
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
@@ -175,11 +167,8 @@ export const compressPdf = async (file: File, quality: number = 0.5, scale: numb
     const compressedBytes = await newPdf.save();
 
     // STRICT CHECK: If compressed file is larger than original, return original.
-    // This happens often with text-only PDFs vs Image PDFs.
     if (compressedBytes.byteLength >= originalSize) {
         console.warn("Compression resulted in larger file. Returning original.");
-        
-        // RELOAD the buffer because the initial arrayBuffer might be detached by the worker
         const originalBuffer = await file.arrayBuffer();
         return new Uint8Array(originalBuffer); 
     }
@@ -194,7 +183,6 @@ export const compressPdf = async (file: File, quality: number = 0.5, scale: numb
 
 /**
  * Converts a PDF file to a Word (.docx) document.
- * This extracts text content and attempts to preserve basic structure.
  */
 export const convertPdfToWord = async (file: File): Promise<Blob> => {
   try {
@@ -217,8 +205,6 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       
-      // Sort text items by Y (top to bottom) then X (left to right)
-      // PDF Y coordinates start from bottom, so we invert logic for Y
       const items = textContent.items.map((item: any) => ({
         text: item.str,
         x: item.transform[4],
@@ -227,20 +213,17 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
         hasEOL: item.hasEOL
       }));
 
-      // Sort items: Higher Y first (top of page), then lower X first (left of page)
       items.sort((a: any, b: any) => {
         const yDiff = b.y - a.y;
         if (Math.abs(yDiff) > 5) return yDiff; // Different lines
         return a.x - b.x; // Same line (approx), sort by X
       });
 
-      // Group into lines/paragraphs
       let currentLineY = -1;
       let currentLineText = "";
       
       items.forEach((item: any) => {
-        // If we moved to a new significant Y position, push previous paragraph
-        if (currentLineY !== -1 && Math.abs(item.y - currentLineY) > 10) { // 10 units threshold for new line
+        if (currentLineY !== -1 && Math.abs(item.y - currentLineY) > 10) { 
            if (currentLineText.trim()) {
              children.push(new Paragraph({
                children: [new TextRun(currentLineText)]
@@ -250,20 +233,16 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
         }
         
         currentLineY = item.y;
-        currentLineText += item.text + " "; // Add space between words
+        currentLineText += item.text + " "; 
       });
 
-      // Push last line of the page
       if (currentLineText.trim()) {
         children.push(new Paragraph({
           children: [new TextRun(currentLineText)]
         }));
       }
 
-      // Add a page break after each PDF page except the last one
       if (i < numPages) {
-         // docx doesn't strictly require explicit page breaks if we just want flow text, 
-         // but adding an empty paragraph or break helps separation.
          children.push(new Paragraph({ children: [new TextRun({ break: 1 })] }));
       }
       
@@ -274,9 +253,7 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
       children: children
     });
 
-    // Generate blob
-    const blob = await Packer.toBlob(doc);
-    return blob;
+    return await Packer.toBlob(doc);
 
   } catch (error) {
     handlePdfError(error, "Failed to convert PDF to Word.");
@@ -308,11 +285,9 @@ export const convertImagesToPdf = async (files: File[]): Promise<Uint8Array> => 
           continue; // Skip images that fail to load
       }
 
-      // Create a page with the same dimensions as the image
       const { width, height } = image.scale(1);
       const page = pdfDoc.addPage([width, height]);
       
-      // Draw image to cover the full page
       page.drawImage(image, {
         x: 0,
         y: 0,
@@ -379,10 +354,6 @@ export const convertPdfToImages = async (file: File): Promise<{ filename: string
   }
 };
 
-/**
- * Generates a preview image (JPG blob URL) of the first page of the PDF.
- * Used for the Rotate tool UI.
- */
 export const getPdfPreview = async (file: File): Promise<string> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -390,9 +361,9 @@ export const getPdfPreview = async (file: File): Promise<string> => {
     
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
     const pdf = await loadingTask.promise;
-    const page = await pdf.getPage(1); // Get first page
+    const page = await pdf.getPage(1);
     
-    const viewport = page.getViewport({ scale: 0.5 }); // Low scale for thumbnail
+    const viewport = page.getViewport({ scale: 0.5 });
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.height = viewport.height;
@@ -412,10 +383,6 @@ export const getPdfPreview = async (file: File): Promise<string> => {
   }
 };
 
-/**
- * Generates previews for all pages in a PDF.
- * Returns an array of Blob URLs.
- */
 export const getPdfPagePreviews = async (file: File): Promise<string[]> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -426,13 +393,12 @@ export const getPdfPagePreviews = async (file: File): Promise<string[]> => {
     const numPages = pdf.numPages;
     const previews: string[] = [];
 
-    // Limit to reasonable number to prevent browser crash on huge PDFs
     const maxPages = 100;
     const pagesToProcess = Math.min(numPages, maxPages);
 
     for (let i = 1; i <= pagesToProcess; i++) {
       const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 0.3 }); // Low scale for grid view
+      const viewport = page.getViewport({ scale: 0.3 });
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.height = viewport.height;
@@ -455,19 +421,12 @@ export const getPdfPagePreviews = async (file: File): Promise<string[]> => {
   }
 };
 
-/**
- * Rotates all pages in a PDF file by the specified degrees.
- * @param file Input PDF file
- * @param rotationDegrees Degrees to rotate (e.g. 90, 180, -90)
- */
 export const rotatePdf = async (file: File, rotationDegrees: number): Promise<Uint8Array> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const pages = pdfDoc.getPages();
 
-    // pdf-lib rotation is handled in degrees (0, 90, 180, 270)
-    // We add the user's requested rotation to the existing rotation
     pages.forEach(page => {
       const currentRotation = page.getRotation().angle;
       page.setRotation(pdfDegrees(currentRotation + rotationDegrees));
@@ -480,9 +439,6 @@ export const rotatePdf = async (file: File, rotationDegrees: number): Promise<Ui
   }
 };
 
-/**
- * Creates a new PDF excluding the specified page numbers (0-based indices).
- */
 export const deletePdfPages = async (file: File, pageIndicesToDelete: number[]): Promise<Uint8Array> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -502,7 +458,6 @@ export const deletePdfPages = async (file: File, pageIndicesToDelete: number[]):
         throw new Error("You cannot delete all pages from the PDF.");
     }
     
-    // Using copyPages allows us to selectively pick which pages to include in the new doc
     const copiedPages = await newPdf.copyPages(srcPdf, pagesToKeep);
     copiedPages.forEach(page => newPdf.addPage(page));
 
@@ -513,9 +468,6 @@ export const deletePdfPages = async (file: File, pageIndicesToDelete: number[]):
   }
 };
 
-/**
- * Adds a text watermark to every page of the PDF.
- */
 export const addWatermark = async (
   file: File, 
   text: string, 
@@ -531,13 +483,12 @@ export const addWatermark = async (
     pages.forEach(page => {
       const { width, height } = page.getSize();
       
-      // Draw text centered and rotated 45 degrees
       page.drawText(text, {
-        x: width / 2 - (text.length * size * 0.3), // Rough centering estimate
+        x: width / 2 - (text.length * size * 0.3), 
         y: height / 2,
         size: size,
         font: helveticaFont,
-        color: rgb(0.7, 0.7, 0.7), // Gray watermark
+        color: rgb(0.7, 0.7, 0.7), 
         opacity: opacity,
         rotate: pdfDegrees(45),
       });
@@ -575,9 +526,6 @@ export type PageAnnotations = {
   viewportHeight: number;
 };
 
-/**
- * Saves the edited PDF with annotations (drawings/text).
- */
 export const saveAnnotatedPdf = async (
   file: File, 
   annotations: Record<number, PageAnnotations>
@@ -588,7 +536,6 @@ export const saveAnnotatedPdf = async (
     const pages = pdfDoc.getPages();
     const font = await pdfDoc.embedFont("Helvetica");
 
-    // Iterate through pages that have annotations
     for (const [pageIndexStr, pageAnnotation] of Object.entries(annotations)) {
       const pageIndex = parseInt(pageIndexStr);
       if (pageIndex >= pages.length) continue;
@@ -596,30 +543,25 @@ export const saveAnnotatedPdf = async (
       const page = pages[pageIndex];
       const { width: pdfWidth, height: pdfHeight } = page.getSize();
       
-      // We rely on the viewport dimensions stored during editing to map coordinates
       const viewportWidth = pageAnnotation.viewportWidth || pdfWidth; 
       const viewportHeight = pageAnnotation.viewportHeight || pdfHeight;
 
       const scaleX = pdfWidth / viewportWidth;
       const scaleY = pdfHeight / viewportHeight;
 
-      // Draw Paths (Freehand/Highlight)
       for (const path of pageAnnotation.paths) {
         if (path.points.length < 2) continue;
         
-        // Convert hex color to rgb
         const r = parseInt(path.color.slice(1, 3), 16) / 255;
         const g = parseInt(path.color.slice(3, 5), 16) / 255;
         const b = parseInt(path.color.slice(5, 7), 16) / 255;
         const color = rgb(r, g, b);
 
-        // Convert canvas points to PDF points
         const pdfPoints = path.points.map(p => ({
             x: p.x * scaleX,
-            y: pdfHeight - (p.y * scaleY) // Invert Y because PDF origin is bottom-left
+            y: pdfHeight - (p.y * scaleY)
         }));
 
-        // Use lines to approximate the curve
         for (let i = 1; i < pdfPoints.length; i++) {
            page.drawLine({
              start: { x: pdfPoints[i-1].x, y: pdfPoints[i-1].y },
@@ -632,11 +574,8 @@ export const saveAnnotatedPdf = async (
         }
       }
 
-      // Draw Text
       for (const textItem of pageAnnotation.texts) {
         const x = textItem.x * scaleX;
-        // Text Y is usually bottom-left of baseline in PDF. 
-        // In Canvas, it's top-left (ish). We subtract font size to align better.
         const y = pdfHeight - (textItem.y * scaleY) - (textItem.size * scaleY * 0.8); 
         
         const r = parseInt(textItem.color.slice(1, 3), 16) / 255;
@@ -660,17 +599,11 @@ export const saveAnnotatedPdf = async (
   }
 };
 
-
-/**
- * Creates a ZIP file containing the provided PDF files.
- */
 export const createZip = async (files: { filename: string; data: Uint8Array }[]): Promise<Blob> => {
   const zip = new JSZip();
-  
   files.forEach(file => {
     zip.file(file.filename, file.data);
   });
-  
   return await zip.generateAsync({ type: 'blob' });
 };
 
@@ -686,7 +619,6 @@ export const downloadBlob = (blob: Blob | Uint8Array, filename: string) => {
   window.URL.revokeObjectURL(url);
 };
 
-// Deprecated alias for backward compatibility if needed, but updated to use generic downloadBlob
 export const downloadPdfBlob = (data: Uint8Array, filename: string = 'merged-document.pdf') => {
   downloadBlob(data, filename);
 };
