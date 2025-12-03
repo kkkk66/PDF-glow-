@@ -2,8 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PDF Glow - Professional PDF Tools</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>PDF Glow - Free Online PDF Tools | Merge, Split, Edit & Compress</title>
+    <meta name="description" content="Secure, free, and fast online PDF tools. Merge, split, compress, edit, and convert PDFs entirely in your browser. No server uploads, 100% privacy guaranteed." />
+    <meta name="keywords" content="pdf merge, pdf split, pdf compress, pdf to word, jpg to pdf, free pdf tools, client-side pdf" />
+    <meta name="theme-color" content="#ec4899" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json" />
+    
+    <!-- iOS Mobile Web App Config -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PDF Glow">
+    <link rel="apple-touch-icon" href="https://ui-avatars.com/api/?name=PDF&background=ec4899&color=fff&size=192&rounded=true" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pdfglow.com/" />
+    <meta property="og:title" content="PDF Glow - Professional PDF Tools" />
+    <meta property="og:description" content="Secure 100% client-side PDF tools. Edit, Merge, and Compress PDFs without uploading files." />
+    <meta property="og:image" content="https://ui-avatars.com/api/?name=PDF+Glow&background=ec4899&color=fff&size=512" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="PDF Glow - Professional PDF Tools" />
+    <meta property="twitter:description" content="Secure 100% client-side PDF tools. Edit, Merge, and Compress PDFs without uploading files." />
+
+    <!-- Favicon (SVG Data URI) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ec4899' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z'/><polyline points='14 2 14 8 20 8'/></svg>" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
@@ -31,6 +59,25 @@
               'pink-glow': '0 0 20px -5px rgba(236, 72, 153, 0.5)',
               'pink-glow-lg': '0 0 40px -10px rgba(236, 72, 153, 0.6)',
               'pink-glow-card': '0 4px 25px -5px rgba(236, 72, 153, 0.15)',
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out',
+              'fade-in-up': 'fadeInUp 0.5s ease-out',
+              'slide-up': 'slideUp 0.4s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              fadeInUp: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(20px)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' },
+              }
             }
           }
         }
@@ -39,9 +86,12 @@
     <style>
       body {
         background-color: #fdfbfd;
+        /* Prevent elastic scrolling on iOS for app-like feel */
+        overscroll-behavior-y: none;
       }
       .custom-scrollbar::-webkit-scrollbar {
         width: 8px;
+        height: 8px;
       }
       .custom-scrollbar::-webkit-scrollbar-track {
         background: #fdf2f8; 
@@ -52,6 +102,13 @@
       }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background: #ec4899; 
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
     </style>
   <script type="importmap">
@@ -64,10 +121,23 @@
     "pdf-lib": "https://aistudiocdn.com/pdf-lib@^1.17.1",
     "jszip": "https://aistudiocdn.com/jszip@^3.10.1",
     "pdfjs-dist": "https://aistudiocdn.com/pdfjs-dist@3.11.174/build/pdf.min.mjs",
-    "docx": "https://aistudiocdn.com/docx@^8.5.0"
+    "docx": "https://aistudiocdn.com/docx@^8.5.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1"
   }
 }
 </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(req => console.log('Service Worker registered!'))
+        .catch(err => console.log('Service Worker registration failed', err));
+    });
+  }
+</script>
+<!-- CRITICAL: Entry Point for React Application -->
+<script type="module" src="/index.tsx"></script>
 </head>
   <body>
     <div id="root"></div>

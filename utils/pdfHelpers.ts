@@ -1,4 +1,4 @@
-import { PDFDocument, degrees as pdfDegrees, rgb } from 'pdf-lib';
+import { PDFDocument, degrees as pdfDegrees, rgb, LineCapStyle } from 'pdf-lib';
 import JSZip from 'jszip';
 import * as pdfjsLibProxy from 'pdfjs-dist';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
@@ -194,11 +194,6 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
 
-    // Create a new DOCX document
-    const doc = new Document({
-      sections: [],
-    });
-
     const children: Paragraph[] = [];
 
     for (let i = 1; i <= numPages; i++) {
@@ -249,8 +244,11 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
       page.cleanup();
     }
 
-    doc.addSection({
-      children: children
+    // Create a new DOCX document
+    const doc = new Document({
+      sections: [{
+          children: children
+      }],
     });
 
     return await Packer.toBlob(doc);
@@ -569,7 +567,7 @@ export const saveAnnotatedPdf = async (
              thickness: path.width * scaleX, 
              color: color,
              opacity: path.opacity,
-             lineCap: 'round'
+             lineCap: LineCapStyle.Round
            });
         }
       }

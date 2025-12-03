@@ -1,0 +1,22 @@
+{
+  "name": "PDF Glow",
+  "short_name": "PDF Glow",
+  "description": "Professional Secure PDF Tools",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ec4899",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://ui-avatars.com/api/?name=PDF&background=ec4899&color=fff&size=192&rounded=true",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://ui-avatars.com/api/?name=PDF&background=ec4899&color=fff&size=512&rounded=true",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
