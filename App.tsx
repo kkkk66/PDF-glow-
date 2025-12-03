@@ -11,18 +11,20 @@ import { PdfRotate } from './components/PdfRotate';
 import { PdfDeletePages } from './components/PdfDeletePages';
 import { PdfWatermark } from './components/PdfWatermark';
 import { PdfEditor } from './components/PdfEditor';
+import { PdfPageNumbers } from './components/PdfPageNumbers';
+import { PdfOrganize } from './components/PdfOrganize';
 import { Footer } from './components/Footer';
 import { AdPlaceholder } from './components/AdPlaceholder';
 import { SeoContent } from './components/SeoContent';
 import { InstallPwa } from './components/InstallPwa';
 import { PrivacyPolicy, TermsOfService, CookiePolicy, AboutUs } from './components/LegalPages';
 import { ContactUs, HelpCenter, ReportIssue } from './components/SupportPages';
-import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, ArrowLeft, Home } from 'lucide-react';
+import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, ArrowLeft, Home, Hash, LayoutGrid } from 'lucide-react';
 
 // Define all possible views
 type ViewState = 
   | 'home'
-  | 'merge' | 'split' | 'compress' | 'word' | 'jpg' | 'pdftojpg' | 'rotate' | 'delete' | 'watermark' | 'editor'
+  | 'merge' | 'split' | 'compress' | 'word' | 'jpg' | 'pdftojpg' | 'rotate' | 'delete' | 'watermark' | 'editor' | 'numbers' | 'organize'
   | 'privacy' | 'terms' | 'cookies' | 'about'
   | 'contact' | 'help' | 'report';
 
@@ -34,6 +36,7 @@ function App() {
     { id: 'merge', label: 'Merge', icon: Layers, fullLabel: 'Merge PDFs' },
     { id: 'split', label: 'Split', icon: Scissors, fullLabel: 'Split PDF' },
     { id: 'compress', label: 'Compress', icon: Minimize2, fullLabel: 'Compress PDF' },
+    { id: 'organize', label: 'Organize', icon: LayoutGrid, fullLabel: 'Organize PDF' },
     { id: 'editor', label: 'Edit', icon: PenTool, fullLabel: 'Edit PDF' },
     { id: 'word', label: 'To Word', icon: FileText, fullLabel: 'PDF to Word' },
     { id: 'jpg', label: 'JPG to PDF', icon: Image, fullLabel: 'JPG to PDF' },
@@ -41,6 +44,7 @@ function App() {
     { id: 'rotate', label: 'Rotate', icon: RotateCw, fullLabel: 'Rotate PDF' },
     { id: 'delete', label: 'Delete', icon: Trash2, fullLabel: 'Delete Pages' },
     { id: 'watermark', label: 'Watermark', icon: Stamp, fullLabel: 'Watermark' },
+    { id: 'numbers', label: 'Numbers', icon: Hash, fullLabel: 'Page Numbers' },
   ];
 
   const isToolView = tools.some(t => t.id === activeView);
@@ -105,6 +109,7 @@ function App() {
             {activeView === 'merge' && <PdfMerger />}
             {activeView === 'split' && <PdfSplitter />}
             {activeView === 'compress' && <PdfCompressor />}
+            {activeView === 'organize' && <PdfOrganize />}
             {activeView === 'editor' && <PdfEditor />}
             {activeView === 'word' && <PdfToWord />}
             {activeView === 'jpg' && <JpgToPdf />}
@@ -112,6 +117,7 @@ function App() {
             {activeView === 'rotate' && <PdfRotate />}
             {activeView === 'delete' && <PdfDeletePages />}
             {activeView === 'watermark' && <PdfWatermark />}
+            {activeView === 'numbers' && <PdfPageNumbers />}
             
             {/* Legal Pages */}
             {activeView === 'privacy' && <PrivacyPolicy />}

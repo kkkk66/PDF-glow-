@@ -437,6 +437,25 @@ export const rotatePdf = async (file: File, rotationDegrees: number): Promise<Ui
   }
 };
 
+export const reorderPdfPages = async (file: File, newOrder: number[]): Promise<Uint8Array> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const srcPdf = await PDFDocument.load(arrayBuffer);
+    const newPdf = await PDFDocument.create();
+
+    // Copy pages in the new order
+    // newOrder array contains the indices of the original pages in the desired sequence
+    const copiedPages = await newPdf.copyPages(srcPdf, newOrder);
+    
+    copiedPages.forEach(page => newPdf.addPage(page));
+
+    return await newPdf.save();
+  } catch (error) {
+    handlePdfError(error, "Failed to reorder PDF pages.");
+    return new Uint8Array();
+  }
+};
+
 export const deletePdfPages = async (file: File, pageIndicesToDelete: number[]): Promise<Uint8Array> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -495,6 +514,71 @@ export const addWatermark = async (
     return await pdfDoc.save();
   } catch (error) {
     handlePdfError(error, "Failed to add watermark.");
+    return new Uint8Array();
+  }
+};
+
+export const addPageNumbers = async (
+  file: File,
+  position: 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-center' | 'top-left' = 'bottom-center'
+): Promise<Uint8Array> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    const pages = pdfDoc.getPages();
+    // Use Standard font to keep file size small
+    const font = await pdfDoc.embedFont("Helvetica"); 
+    const fontSize = 12;
+
+    pages.forEach((page, index) => {
+      const { width, height } = page.getSize();
+      const pageNumber = `${index + 1}`;
+      const textWidth = font.widthOfTextAtSize(pageNumber, fontSize);
+      const margin = 20; // Distance from edge
+
+      let x = 0;
+      let y = 0;
+
+      // Calculate coordinates based on position
+      switch (position) {
+        case 'bottom-center':
+          x = width / 2 - textWidth / 2;
+          y = margin;
+          break;
+        case 'bottom-right':
+          x = width - textWidth - margin;
+          y = margin;
+          break;
+        case 'bottom-left':
+          x = margin;
+          y = margin;
+          break;
+        case 'top-center':
+          x = width / 2 - textWidth / 2;
+          y = height - margin - fontSize;
+          break;
+        case 'top-right':
+          x = width - textWidth - margin;
+          y = height - margin - fontSize;
+          break;
+        case 'top-left':
+          x = margin;
+          y = height - margin - fontSize;
+          break;
+      }
+
+      page.drawText(pageNumber, {
+        x,
+        y,
+        size: fontSize,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+    });
+
+    return await pdfDoc.save();
+  } catch (error) {
+    handlePdfError(error, "Failed to add page numbers.");
     return new Uint8Array();
   }
 };
