@@ -1,0 +1,13 @@
+Changes included:
+- Added privacy-policy.md
+- Added ads.txt (root)
+- Added about.md and contact.md
+- Added sitemap.xml
+- Added pages/_document.js snippet to include AdSense head script (placeholder ca-pub)
+- Added components/AdUnit.js and components/Footer.js
+Next steps for you:
+1) Replace placeholders: contact email, domain, ca-pub ID and ads.txt pub id.
+2) Add 5 unique content pages/blog posts (each 400-800+ words).
+3) Ensure site navigation links to About/Privacy/Contact and sample content pages.
+4) Verify mobile/desktop Lighthouse basics and fix major issues.
+5) After stable content, check the pages are public and request AdSense review.

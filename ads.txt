@@ -1,0 +1,2 @@
+# Replace PUB-ID with your AdSense publisher ID (pub-XXXXXXXXXXXX)
+google.com, pub-PUB-ID-HERE, DIRECT, f08c47fec0942fa0
