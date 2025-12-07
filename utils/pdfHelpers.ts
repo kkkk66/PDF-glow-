@@ -1,18 +1,38 @@
-import { PDFDocument, degrees as pdfDegrees, rgb, LineCapStyle } from 'pdf-lib';
+import { PDFDocument, degrees as pdfDegrees, rgb, LineCapStyle, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 import * as pdfjsLibProxy from 'pdfjs-dist';
 import { Document, Packer, Paragraph, TextRun } from 'docx';
 
-// Handle ESM import quirks for pdfjs-dist
-// We explicitly check which object contains the library methods we need
-export const pdfjsLib = (pdfjsLibProxy as any).GlobalWorkerOptions 
-  ? pdfjsLibProxy 
-  : (pdfjsLibProxy as any).default;
+// --- ROBUST PDF.JS INITIALIZATION ---
+// We need to handle different export structures (ESM vs CJS vs Browser Globals)
+let pdfjs: any;
+// Check for default export (common in ESM)
+if ((pdfjsLibProxy as any).default) {
+    pdfjs = (pdfjsLibProxy as any).default;
+} else {
+    // Fallback to the proxy itself (common in some bundlers or CJS)
+    pdfjs = pdfjsLibProxy;
+}
 
-// Set worker source for PDF.js - CENTRALIZED CONFIGURATION
-if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-  // Use CDNJS for the worker script as it is highly reliable and supports CORS correctly for workers
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+export const pdfjsLib = pdfjs;
+
+// --- WORKER CONFIGURATION ---
+try {
+  if (typeof window !== 'undefined' && pdfjsLib) {
+    // Only configure if not already configured
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        // Use a stable version known to work with the library.
+        // We prefer the version from package.json/importmap which is 3.11.174
+        const version = pdfjsLib.version || '3.11.174'; 
+        console.log(`Initializing PDF.js Worker v${version}`);
+        
+        // Use unpkg as a reliable CDN. 
+        // Important: pdfjs-dist v3+ uses pdf.worker.min.js in the build folder
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${version}/build/pdf.worker.min.js`;
+    }
+  }
+} catch (e) {
+  console.warn("Failed to initialize PDF Worker:", e);
 }
 
 const handlePdfError = (error: any, defaultMessage: string) => {
@@ -22,36 +42,26 @@ const handlePdfError = (error: any, defaultMessage: string) => {
   if (msg.includes('Password') || msg.includes('Encrypted')) {
     throw new Error("One or more files are password protected. Please remove the password and try again.");
   }
-  if (msg.includes('Invalid PDF') || msg.includes('FormatError')) {
-    throw new Error("One or more files seem to be corrupted or invalid PDF files.");
+  if (msg.includes('Invalid PDF') || msg.includes('FormatError') || msg.includes('worker') || msg.includes('fetch')) {
+    throw new Error("File appears corrupted or PDF worker failed to load. Please refresh and try again.");
   }
   throw new Error(`${defaultMessage} ${msg}`);
 };
 
 /**
  * Merges multiple PDF ArrayBuffers into a single PDF Document.
- * This is a 100% client-side operation with NO AI involved.
  */
 export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
   try {
-    // Create a new PDF Document
     const mergedPdf = await PDFDocument.create();
 
     for (const file of files) {
-      // Read the file as an ArrayBuffer
       const arrayBuffer = await file.arrayBuffer();
-      
       try {
-        // Load the source PDF
         const srcPdf = await PDFDocument.load(arrayBuffer);
-        
-        // Copy all pages from source PDF
         const copiedPages = await mergedPdf.copyPages(srcPdf, srcPdf.getPageIndices());
-        
-        // Add copied pages to the merged PDF
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       } catch (e) {
-         // Catch individual file errors to identify which file failed
          const msg = (e as any).message || '';
          if (msg.includes('Password') || msg.includes('Encrypted')) {
              throw new Error(`File "${file.name}" is password protected. Please unlock it first.`);
@@ -60,7 +70,6 @@ export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
       }
     }
 
-    // Serialize the PDFDocument to bytes (a Uint8Array)
     const pdfBytes = await mergedPdf.save();
     return pdfBytes;
   } catch (error) {
@@ -72,7 +81,6 @@ export const mergePdfs = async (files: File[]): Promise<Uint8Array> => {
 
 /**
  * Splits a single PDF into individual files for each page.
- * Returns an array of objects containing filename and data.
  */
 export const splitPdf = async (file: File): Promise<{ filename: string; data: Uint8Array }[]> => {
   try {
@@ -81,19 +89,12 @@ export const splitPdf = async (file: File): Promise<{ filename: string; data: Ui
     const pageCount = srcPdf.getPageCount();
     const result: { filename: string; data: Uint8Array }[] = [];
 
-    // Loop through each page
     for (let i = 0; i < pageCount; i++) {
-      // Create a new document for this single page
       const newPdf = await PDFDocument.create();
-      
-      // Copy the specific page
       const [page] = await newPdf.copyPages(srcPdf, [i]);
       newPdf.addPage(page);
-      
-      // Save
       const pdfBytes = await newPdf.save();
       
-      // Add to result
       result.push({
         filename: `${file.name.replace('.pdf', '')}_page_${i + 1}.pdf`,
         data: pdfBytes
@@ -103,33 +104,30 @@ export const splitPdf = async (file: File): Promise<{ filename: string; data: Ui
     return result;
   } catch (error) {
     handlePdfError(error, "Failed to split PDF.");
-    return []; // Unreachable but satisfies TS
+    return []; 
   }
 };
 
 /**
  * Compresses a PDF file by rendering pages to images and re-saving them.
- * This is effective for shrinking scanned documents or image-heavy PDFs.
  */
-export const compressPdf = async (file: File, quality: number = 0.5, scale: number = 0.8): Promise<Uint8Array> => {
+export const compressPdf = async (file: File, quality: number = 0.7, scale: number = 1.0): Promise<Uint8Array> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const originalSize = arrayBuffer.byteLength;
     
-    if (!pdfjsLib) throw new Error("PDF Library not initialized correctly");
+    if (!pdfjsLib) throw new Error("PDF Library not initialized correctly.");
     
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
 
-    // Create a new PDF Document to hold compressed pages
     const newPdf = await PDFDocument.create();
 
     for (let i = 1; i <= numPages; i++) {
       const page = await pdf.getPage(i);
       const viewport = page.getViewport({ scale: scale }); 
       
-      // Create a canvas to render the page
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.height = viewport.height;
@@ -137,21 +135,17 @@ export const compressPdf = async (file: File, quality: number = 0.5, scale: numb
 
       if (!context) throw new Error("Canvas context not available");
 
-      // Render PDF page to canvas
       await page.render({ canvasContext: context, viewport: viewport }).promise;
 
-      // Convert canvas to JPEG blob with specified quality
       const imageBlob = await new Promise<Blob | null>(resolve => 
         canvas.toBlob(resolve, 'image/jpeg', quality)
       );
 
       if (!imageBlob) throw new Error(`Failed to compress page ${i}`);
 
-      // Embed the JPEG into the new PDF
       const imageArrayBuffer = await imageBlob.arrayBuffer();
       const jpgImage = await newPdf.embedJpg(imageArrayBuffer);
 
-      // Add a page with the image
       const newPage = newPdf.addPage([viewport.width, viewport.height]);
       newPage.drawImage(jpgImage, {
         x: 0,
@@ -160,13 +154,11 @@ export const compressPdf = async (file: File, quality: number = 0.5, scale: numb
         height: viewport.height,
       });
       
-      // Cleanup page resources
       page.cleanup();
     }
 
     const compressedBytes = await newPdf.save();
 
-    // STRICT CHECK: If compressed file is larger than original, return original.
     if (compressedBytes.byteLength >= originalSize) {
         console.warn("Compression resulted in larger file. Returning original.");
         const originalBuffer = await file.arrayBuffer();
@@ -176,10 +168,9 @@ export const compressPdf = async (file: File, quality: number = 0.5, scale: numb
     return compressedBytes;
   } catch (error) {
     handlePdfError(error, "Failed to compress PDF.");
-    return new Uint8Array(); // Unreachable
+    return new Uint8Array();
   }
 };
-
 
 /**
  * Converts a PDF file to a Word (.docx) document.
@@ -200,18 +191,19 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
       const page = await pdf.getPage(i);
       const textContent = await page.getTextContent();
       
+      // Typesafe check for items
       const items = textContent.items.map((item: any) => ({
-        text: item.str,
-        x: item.transform[4],
-        y: item.transform[5],
+        text: item.str || "",
+        x: (item.transform && item.transform[4]) ? item.transform[4] : 0,
+        y: (item.transform && item.transform[5]) ? item.transform[5] : 0,
         height: item.height || 0,
         hasEOL: item.hasEOL
       }));
 
       items.sort((a: any, b: any) => {
         const yDiff = b.y - a.y;
-        if (Math.abs(yDiff) > 5) return yDiff; // Different lines
-        return a.x - b.x; // Same line (approx), sort by X
+        if (Math.abs(yDiff) > 5) return yDiff; 
+        return a.x - b.x; 
       });
 
       let currentLineY = -1;
@@ -244,7 +236,6 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
       page.cleanup();
     }
 
-    // Create a new DOCX document
     const doc = new Document({
       sections: [{
           children: children
@@ -255,12 +246,12 @@ export const convertPdfToWord = async (file: File): Promise<Blob> => {
 
   } catch (error) {
     handlePdfError(error, "Failed to convert PDF to Word.");
-    return new Blob(); // Unreachable
+    return new Blob();
   }
 };
 
 /**
- * Converts multiple Image files (JPG/PNG) to a single PDF Document.
+ * Converts multiple Image files to a single PDF.
  */
 export const convertImagesToPdf = async (files: File[]): Promise<Uint8Array> => {
   try {
@@ -269,47 +260,37 @@ export const convertImagesToPdf = async (files: File[]): Promise<Uint8Array> => 
     for (const file of files) {
       const arrayBuffer = await file.arrayBuffer();
       let image;
-      
       try {
-          // Detect MIME type or extension
           if (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png')) {
              image = await pdfDoc.embedPng(arrayBuffer);
           } else {
-             // Default to JPG for common camera photos (jpeg, jpg)
              image = await pdfDoc.embedJpg(arrayBuffer);
           }
       } catch (e) {
-          console.warn(`Failed to embed image ${file.name}. It might be an unsupported format.`, e);
-          continue; // Skip images that fail to load
+          console.warn(`Failed to embed image ${file.name}`, e);
+          continue; 
       }
 
       const { width, height } = image.scale(1);
       const page = pdfDoc.addPage([width, height]);
-      
-      page.drawImage(image, {
-        x: 0,
-        y: 0,
-        width,
-        height,
-      });
+      page.drawImage(image, { x: 0, y: 0, width, height });
     }
 
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (error) {
     console.error("Error converting images to PDF:", error);
-    throw new Error("Failed to convert images. Ensure they are valid JPG or PNG files.");
+    throw new Error("Failed to convert images.");
   }
 };
 
 /**
- * Converts a PDF file to a set of JPG images (one per page).
+ * Converts a PDF file to JPG images.
  */
 export const convertPdfToImages = async (file: File): Promise<{ filename: string; data: Uint8Array }[]> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
-    
-    if (!pdfjsLib) throw new Error("PDF Library not initialized correctly");
+    if (!pdfjsLib) throw new Error("PDF Library not initialized");
     
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
     const pdf = await loadingTask.promise;
@@ -318,15 +299,13 @@ export const convertPdfToImages = async (file: File): Promise<{ filename: string
 
     for (let i = 1; i <= numPages; i++) {
       const page = await pdf.getPage(i);
-      // Use a reasonable scale for quality (2.0 is around 144 DPI if standard is 72)
       const viewport = page.getViewport({ scale: 2.0 }); 
-      
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
-      if (!context) throw new Error("Canvas context not available");
+      if (!context) throw new Error("Canvas context missing");
 
       await page.render({ canvasContext: context, viewport: viewport }).promise;
 
@@ -341,10 +320,8 @@ export const convertPdfToImages = async (file: File): Promise<{ filename: string
             data: new Uint8Array(buffer)
         });
       }
-      
       page.cleanup();
     }
-
     return images;
   } catch (error) {
     handlePdfError(error, "Failed to convert PDF to images.");
@@ -377,7 +354,8 @@ export const getPdfPreview = async (file: File): Promise<string> => {
     return URL.createObjectURL(blob);
   } catch (error) {
     console.error("Preview generation failed", error);
-    return "";
+    // Throwing error allows components to handle the loading state failure
+    throw new Error("Preview generation failed. Please refresh or try another file.");
   }
 };
 
@@ -390,32 +368,38 @@ export const getPdfPagePreviews = async (file: File): Promise<string[]> => {
     const pdf = await loadingTask.promise;
     const numPages = pdf.numPages;
     const previews: string[] = [];
-
-    const maxPages = 100;
+    const maxPages = 50; // Limit pages to prevent browser crash
     const pagesToProcess = Math.min(numPages, maxPages);
 
     for (let i = 1; i <= pagesToProcess; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 0.3 });
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+      try {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 0.3 });
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
 
-      if (!context) throw new Error("Canvas context not available");
-
-      await page.render({ canvasContext: context, viewport: viewport }).promise;
-
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
-      if (blob) {
-        previews.push(URL.createObjectURL(blob));
+        if (context) {
+          await page.render({ canvasContext: context, viewport: viewport }).promise;
+          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.7));
+          if (blob) {
+            previews.push(URL.createObjectURL(blob));
+          } else {
+             previews.push(""); // Placeholder for failed blob
+          }
+        }
+        page.cleanup();
+      } catch (pageErr) {
+        console.warn(`Failed to render page ${i}`, pageErr);
+        previews.push(""); // Placeholder
       }
-      page.cleanup();
     }
+    
     return previews;
   } catch (error) {
     console.error("Multi-page preview generation failed", error);
-    return [];
+    throw new Error("Failed to generate page previews.");
   }
 };
 
@@ -433,25 +417,6 @@ export const rotatePdf = async (file: File, rotationDegrees: number): Promise<Ui
     return await pdfDoc.save();
   } catch (error) {
     handlePdfError(error, "Failed to rotate PDF.");
-    return new Uint8Array();
-  }
-};
-
-export const reorderPdfPages = async (file: File, newOrder: number[]): Promise<Uint8Array> => {
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const srcPdf = await PDFDocument.load(arrayBuffer);
-    const newPdf = await PDFDocument.create();
-
-    // Copy pages in the new order
-    // newOrder array contains the indices of the original pages in the desired sequence
-    const copiedPages = await newPdf.copyPages(srcPdf, newOrder);
-    
-    copiedPages.forEach(page => newPdf.addPage(page));
-
-    return await newPdf.save();
-  } catch (error) {
-    handlePdfError(error, "Failed to reorder PDF pages.");
     return new Uint8Array();
   }
 };
@@ -485,6 +450,22 @@ export const deletePdfPages = async (file: File, pageIndicesToDelete: number[]):
   }
 };
 
+export const reorderPdfPages = async (file: File, newOrder: number[]): Promise<Uint8Array> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const srcPdf = await PDFDocument.load(arrayBuffer);
+    const newPdf = await PDFDocument.create();
+    
+    const copiedPages = await newPdf.copyPages(srcPdf, newOrder);
+    copiedPages.forEach(page => newPdf.addPage(page));
+
+    return await newPdf.save();
+  } catch (error) {
+    handlePdfError(error, "Failed to reorder pages.");
+    return new Uint8Array();
+  }
+};
+
 export const addWatermark = async (
   file: File, 
   text: string, 
@@ -499,7 +480,6 @@ export const addWatermark = async (
 
     pages.forEach(page => {
       const { width, height } = page.getSize();
-      
       page.drawText(text, {
         x: width / 2 - (text.length * size * 0.3), 
         y: height / 2,
@@ -519,60 +499,49 @@ export const addWatermark = async (
 };
 
 export const addPageNumbers = async (
-  file: File,
-  position: 'bottom-center' | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-center' | 'top-left' = 'bottom-center'
+  file: File, 
+  position: 'bottom-center' | 'bottom-right' | 'top-right' | 'top-center',
+  startFrom: number = 1
 ): Promise<Uint8Array> => {
   try {
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const pages = pdfDoc.getPages();
-    // Use Standard font to keep file size small
-    const font = await pdfDoc.embedFont("Helvetica"); 
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontSize = 12;
 
     pages.forEach((page, index) => {
       const { width, height } = page.getSize();
-      const pageNumber = `${index + 1}`;
-      const textWidth = font.widthOfTextAtSize(pageNumber, fontSize);
-      const margin = 20; // Distance from edge
+      const pageNumber = index + startFrom;
+      const text = `${pageNumber}`;
+      const textWidth = font.widthOfTextAtSize(text, fontSize);
+      const textHeight = font.heightAtSize(fontSize);
+      const margin = 20;
 
       let x = 0;
       let y = 0;
 
-      // Calculate coordinates based on position
-      switch (position) {
+      switch(position) {
         case 'bottom-center':
-          x = width / 2 - textWidth / 2;
-          y = margin;
-          break;
+            x = (width / 2) - (textWidth / 2);
+            y = margin;
+            break;
         case 'bottom-right':
-          x = width - textWidth - margin;
-          y = margin;
-          break;
-        case 'bottom-left':
-          x = margin;
-          y = margin;
-          break;
+            x = width - textWidth - margin;
+            y = margin;
+            break;
         case 'top-center':
-          x = width / 2 - textWidth / 2;
-          y = height - margin - fontSize;
-          break;
+            x = (width / 2) - (textWidth / 2);
+            y = height - margin - textHeight;
+            break;
         case 'top-right':
-          x = width - textWidth - margin;
-          y = height - margin - fontSize;
-          break;
-        case 'top-left':
-          x = margin;
-          y = height - margin - fontSize;
-          break;
+            x = width - textWidth - margin;
+            y = height - margin - textHeight;
+            break;
       }
 
-      page.drawText(pageNumber, {
-        x,
-        y,
-        size: fontSize,
-        font: font,
-        color: rgb(0, 0, 0),
+      page.drawText(text, {
+        x, y, size: fontSize, font: font, color: rgb(0, 0, 0),
       });
     });
 

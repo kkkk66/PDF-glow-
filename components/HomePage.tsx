@@ -173,27 +173,81 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <AdPlaceholder className="h-[200px] bg-gray-50" />
       </div>
 
-      {/* 7. CTA */}
+      {/* 7. CTA - ALL TOOLS */}
       <div className="text-center pb-20">
         <h2 className="text-3xl font-bold text-gray-900 mb-6">Ready to get started?</h2>
-        <div className="flex flex-wrap justify-center gap-4">
+        <div className="flex flex-wrap justify-center gap-4 max-w-5xl mx-auto">
             <button 
                 onClick={() => onNavigate('merge')}
-                className="bg-pink-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-all shadow-pink-glow"
+                className="bg-pink-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-pink-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
                 Merge PDF
             </button>
             <button 
+                onClick={() => onNavigate('split')}
+                className="bg-orange-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Split PDF
+            </button>
+            <button 
                 onClick={() => onNavigate('compress')}
-                className="bg-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all shadow-md"
+                className="bg-blue-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
                 Compress PDF
             </button>
             <button 
+                onClick={() => onNavigate('organize')}
+                className="bg-purple-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Organize PDF
+            </button>
+            <button 
+                onClick={() => onNavigate('editor')}
+                className="bg-cyan-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-cyan-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Edit PDF
+            </button>
+            <button 
+                onClick={() => onNavigate('word')}
+                className="bg-indigo-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                PDF to Word
+            </button>
+            <button 
                 onClick={() => onNavigate('jpg')}
-                className="bg-purple-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-600 transition-all shadow-md"
+                className="bg-violet-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-violet-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
             >
                 JPG to PDF
+            </button>
+             <button 
+                onClick={() => onNavigate('pdftojpg')}
+                className="bg-yellow-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-yellow-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                PDF to JPG
+            </button>
+            <button 
+                onClick={() => onNavigate('rotate')}
+                className="bg-emerald-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Rotate PDF
+            </button>
+            <button 
+                onClick={() => onNavigate('delete')}
+                className="bg-red-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Delete Pages
+            </button>
+            <button 
+                onClick={() => onNavigate('watermark')}
+                className="bg-teal-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-teal-600 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Watermark
+            </button>
+             <button 
+                onClick={() => onNavigate('pagenumbers')}
+                className="bg-lime-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-lime-700 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+            >
+                Page Numbers
             </button>
         </div>
       </div>

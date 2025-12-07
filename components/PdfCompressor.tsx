@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, File as FileIcon, Minimize2, Loader2, CheckCircle, RefreshCw, Download, Settings, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Upload, X, File as FileIcon, Minimize2, Loader2, CheckCircle, RefreshCw, Download, Settings, AlertTriangle, AlertCircle, Info } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { compressPdf, downloadBlob } from '../utils/pdfHelpers';
 
@@ -45,11 +45,11 @@ export const PdfCompressor: React.FC = () => {
     setErrorMessage(null);
     
     try {
-      // Configuration based on level - TUNED FOR BETTER REDUCTION
-      // Recommended: 0.5 quality, 0.75 scale (Balanced)
-      // Extreme: 0.3 quality, 0.5 scale (Max shrink)
-      const quality = compressionLevel === 'recommended' ? 0.5 : 0.3;
-      const scale = compressionLevel === 'recommended' ? 0.75 : 0.5;
+      // Configuration based on level - TUNED FOR BETTER REDUCTION & READABILITY
+      // Recommended: 0.7 quality (better for text), 1.0 scale (72DPI)
+      // Extreme: 0.5 quality, 0.7 scale (Low Res)
+      const quality = compressionLevel === 'recommended' ? 0.7 : 0.5;
+      const scale = compressionLevel === 'recommended' ? 1.0 : 0.7;
 
       const result = await compressPdf(file.file, quality, scale);
       
@@ -89,7 +89,6 @@ export const PdfCompressor: React.FC = () => {
   const calculateSavings = () => {
     if (originalSize === 0 || compressedSize === 0) return 0;
     const savings = Math.round(((originalSize - compressedSize) / originalSize) * 100);
-    // Ensure we don't show negative savings if logic fails slightly (though backend protects this)
     return Math.max(0, savings);
   };
 
@@ -115,7 +114,6 @@ export const PdfCompressor: React.FC = () => {
             </p>
           </div>
 
-          {/* Success State */}
           {status === MergeStatus.SUCCESS ? (
             <div className="flex flex-col items-center justify-center py-8 animate-fade-in">
               {isEffective ? (
@@ -203,6 +201,20 @@ export const PdfCompressor: React.FC = () => {
                 </div>
               )}
 
+              {/* Information Banner about Rasterization */}
+              {!file && (
+                <div className="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 text-blue-700">
+                    <Info size={20} className="flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-sm">How compression works</p>
+                        <p className="text-sm opacity-90">
+                            To achieve maximum size reduction securely in your browser, this tool converts PDF pages into optimized images (flattening). 
+                            <span className="font-bold"> Note: Text in the output PDF may not be selectable.</span>
+                        </p>
+                    </div>
+                </div>
+              )}
+
               {/* Upload Area */}
               <div 
                 className={`border-3 border-dashed rounded-3xl transition-all duration-300 ${
@@ -265,7 +277,7 @@ export const PdfCompressor: React.FC = () => {
                                         </div>
                                         <div>
                                             <span className="font-bold text-gray-800 block">Standard Compression</span>
-                                            <span className="text-xs text-gray-500">Good balance for most documents</span>
+                                            <span className="text-xs text-gray-500">Good balance for most documents (Recommended)</span>
                                         </div>
                                     </div>
                                     <input 
@@ -289,7 +301,7 @@ export const PdfCompressor: React.FC = () => {
                                         </div>
                                         <div>
                                             <span className="font-bold text-gray-800 block">Extreme Compression</span>
-                                            <span className="text-xs text-gray-500">Low quality, maximum size reduction</span>
+                                            <span className="text-xs text-gray-500">Low resolution, maximum size reduction</span>
                                         </div>
                                     </div>
                                     <input 

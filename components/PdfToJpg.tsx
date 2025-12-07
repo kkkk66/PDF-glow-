@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, File as FileIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, FolderDown, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { convertPdfToImages, createZip, downloadBlob } from '../utils/pdfHelpers';
@@ -9,6 +9,19 @@ export const PdfToJpg: React.FC = () => {
   const [images, setImages] = useState<{ filename: string; data: Uint8Array; preview: string }[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Track images for cleanup
+  const imagesRef = useRef<{ filename: string; data: Uint8Array; preview: string }[]>([]);
+  
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
+  
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach(img => URL.revokeObjectURL(img.preview));
+    };
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -19,7 +32,11 @@ export const PdfToJpg: React.FC = () => {
       });
       event.target.value = '';
       setStatus(MergeStatus.IDLE);
+      
+      // Cleanup previous images
+      images.forEach(img => URL.revokeObjectURL(img.preview));
       setImages([]);
+      
       setErrorMessage(null);
     }
   };
@@ -27,6 +44,8 @@ export const PdfToJpg: React.FC = () => {
   const removeFile = () => {
     setFile(null);
     setStatus(MergeStatus.IDLE);
+    // Cleanup previous images
+    images.forEach(img => URL.revokeObjectURL(img.preview));
     setImages([]);
     setErrorMessage(null);
   };
@@ -65,12 +84,7 @@ export const PdfToJpg: React.FC = () => {
   };
 
   const handleReset = () => {
-    // Cleanup preview URLs
-    images.forEach(img => URL.revokeObjectURL(img.preview));
-    setFile(null);
-    setStatus(MergeStatus.IDLE);
-    setImages([]);
-    setErrorMessage(null);
+    removeFile();
   };
 
   return (

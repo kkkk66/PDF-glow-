@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, File as FileIcon, Scissors, Loader2, CheckCircle, RefreshCw, FolderDown, Download, AlertCircle } from 'lucide-react';
+import { X, File as FileIcon, Scissors, Loader2, CheckCircle, RefreshCw, FolderDown, Download, AlertCircle } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { splitPdf, createZip, downloadBlob } from '../utils/pdfHelpers';
+import { FileUploader } from './FileUploader';
 
 export const PdfSplitter: React.FC = () => {
   const [file, setFile] = useState<UploadedFile | null>(null);
@@ -10,17 +11,15 @@ export const PdfSplitter: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const selectedFile = event.target.files[0];
-      setFile({
-        id: Math.random().toString(36).substring(7),
-        file: selectedFile
-      });
-      event.target.value = '';
-      setStatus(MergeStatus.IDLE);
-      setSplitFiles([]);
-      setErrorMessage(null);
+  const handleFilesSelected = (files: File[]) => {
+    if (files.length > 0) {
+        setFile({
+            id: Math.random().toString(36).substring(7),
+            file: files[0]
+        });
+        setStatus(MergeStatus.IDLE);
+        setSplitFiles([]);
+        setErrorMessage(null);
     }
   };
 
@@ -151,67 +150,44 @@ export const PdfSplitter: React.FC = () => {
               )}
 
               {/* Upload Area */}
-              <div 
-                className={`border-3 border-dashed rounded-3xl transition-all duration-300 ${
-                  file 
-                    ? 'border-glow-200 bg-glow-50/50' 
-                    : 'border-gray-200 hover:border-glow-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                  {!file ? (
-                    <>
-                      <div className="w-20 h-20 bg-white rounded-2xl shadow-md flex items-center justify-center mb-6">
-                        <Upload className="text-glow-500 w-10 h-10" />
+              {!file ? (
+                 <FileUploader onFilesSelected={handleFilesSelected} label="Drop PDF file here" />
+              ) : (
+                 <div className="w-full max-w-lg mx-auto">
+                    <div className="flex items-center justify-between bg-white p-6 rounded-xl border border-gray-100 shadow-sm animate-slide-up">
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <FileIcon className="text-red-500 w-6 h-6" />
+                        </div>
+                        <div className="text-left">
+                          <p className="font-bold text-gray-700 truncate max-w-[200px]">{file.file.name}</p>
+                          <p className="text-sm text-gray-400">{(file.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
                       </div>
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">Drop your PDF file here</h3>
-                      <p className="text-gray-400 mb-6">or click to browse your computer</p>
                       <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="bg-gray-900 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-gray-200 hover:shadow-xl transition-all"
+                        onClick={removeFile}
+                        className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors"
                       >
-                        Select PDF
+                        <X size={20} />
                       </button>
-                    </>
-                  ) : (
-                     <div className="w-full max-w-lg">
-                        <div className="flex items-center justify-between bg-white p-6 rounded-xl border border-gray-100 shadow-sm animate-slide-up">
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                              <FileIcon className="text-red-500 w-6 h-6" />
-                            </div>
-                            <div className="text-left">
-                              <p className="font-bold text-gray-700 truncate max-w-[200px]">{file.file.name}</p>
-                              <p className="text-sm text-gray-400">{(file.file.size / 1024 / 1024).toFixed(2)} MB</p>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={removeFile}
-                            className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors"
-                          >
-                            <X size={20} />
-                          </button>
-                        </div>
-                        <div className="mt-4 text-center">
-                            <button 
-                                onClick={() => fileInputRef.current?.click()}
-                                className="text-sm text-glow-600 hover:text-glow-700 font-medium hover:underline"
-                            >
-                                Change file
-                            </button>
-                        </div>
-                     </div>
-                  )}
-                  
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    className="hidden" 
-                    accept="application/pdf" 
-                  />
-                </div>
-              </div>
+                    </div>
+                    <div className="mt-4 text-center">
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-sm text-glow-600 hover:text-glow-700 font-medium hover:underline"
+                        >
+                            Change file
+                        </button>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={(e) => e.target.files && handleFilesSelected(Array.from(e.target.files))}
+                            className="hidden" 
+                            accept="application/pdf" 
+                        />
+                    </div>
+                 </div>
+              )}
 
               {/* Action Bar */}
               {file && (

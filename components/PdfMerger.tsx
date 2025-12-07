@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, File as FileIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import { X, File as FileIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { mergePdfs, downloadPdfBlob } from '../utils/pdfHelpers';
+import { FileUploader } from './FileUploader';
 
 export const PdfMerger: React.FC = () => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
@@ -10,17 +11,14 @@ export const PdfMerger: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const newFiles: UploadedFile[] = Array.from(event.target.files).map(file => ({
-        id: Math.random().toString(36).substring(7),
-        file: file as File
-      }));
-      setFiles(prev => [...prev, ...newFiles]);
-      setErrorMessage(null);
-      setStatus(MergeStatus.IDLE);
-      event.target.value = '';
-    }
+  const handleFilesSelected = (newFilesRaw: File[]) => {
+    const newFiles: UploadedFile[] = newFilesRaw.map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file: file
+    }));
+    setFiles(prev => [...prev, ...newFiles]);
+    setErrorMessage(null);
+    setStatus(MergeStatus.IDLE);
   };
 
   const removeFile = (id: string) => {
@@ -131,92 +129,75 @@ export const PdfMerger: React.FC = () => {
                 </div>
               )}
 
-              <div 
-                className={`border-3 border-dashed rounded-3xl transition-all duration-300 ${
-                  files.length > 0 
-                    ? 'border-glow-200 bg-glow-50/50' 
-                    : 'border-gray-200 hover:border-glow-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex flex-col items-center justify-center py-10 md:py-16 px-4 text-center">
-                  {files.length === 0 ? (
-                    <>
-                      <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl shadow-md flex items-center justify-center mb-6">
-                        <Upload className="text-glow-500 w-8 h-8 md:w-10 md:h-10" />
-                      </div>
-                      <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Drop your files here</h3>
-                      <p className="text-gray-400 mb-6 text-sm md:text-base">or click to browse your computer</p>
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="bg-gray-900 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-gray-200 hover:shadow-xl transition-all w-full sm:w-auto"
-                      >
-                        Select PDF Files
-                      </button>
-                    </>
-                  ) : (
-                     <div className="w-full max-w-2xl">
-                        <div className="flex justify-between items-center mb-4 md:mb-6 px-2">
-                           <h3 className="font-bold text-gray-700 text-sm md:text-base">Selected Files ({files.length})</h3>
-                           <button 
-                             onClick={() => fileInputRef.current?.click()}
-                             className="text-sm text-glow-600 hover:text-glow-700 font-medium hover:underline"
-                           >
-                             + Add more files
-                           </button>
-                        </div>
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
-                          {files.map((item, index) => (
-                            <div key={item.id} className="flex items-center justify-between bg-white p-3 md:p-4 rounded-xl border border-gray-100 shadow-sm animate-slide-up group">
-                              <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
-                                <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button 
-                                        onClick={() => moveFile(index, 'up')} 
-                                        disabled={index === 0}
-                                        className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                    >
-                                        <ArrowUp size={14} />
-                                    </button>
-                                    <button 
-                                        onClick={() => moveFile(index, 'down')} 
-                                        disabled={index === files.length - 1}
-                                        className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 disabled:opacity-30"
-                                    >
-                                        <ArrowDown size={14} />
-                                    </button>
-                                </div>
-                                <div className="w-8 h-8 md:w-10 md:h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <FileIcon className="text-red-500 w-4 h-4 md:w-5 md:h-5" />
-                                </div>
-                                <div className="text-left overflow-hidden">
-                                  <p className="font-semibold text-gray-700 truncate text-sm md:text-base">{item.file.name}</p>
-                                  <p className="text-xs text-gray-400">{(item.file.size / 1024 / 1024).toFixed(2)} MB</p>
-                                </div>
-                              </div>
-                              <button 
-                                onClick={() => removeFile(item.id)}
-                                className="p-1.5 md:p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors flex-shrink-0"
-                              >
-                                <X size={18} />
-                              </button>
+              {files.length === 0 ? (
+                <FileUploader 
+                  onFilesSelected={handleFilesSelected} 
+                  multiple={true}
+                  label="Drop PDF files here"
+                  subLabel="or click to browse your computer"
+                />
+              ) : (
+                <div className="w-full max-w-2xl mx-auto">
+                    <div className="flex justify-between items-center mb-4 md:mb-6 px-2">
+                        <h3 className="font-bold text-gray-700 text-sm md:text-base">Selected Files ({files.length})</h3>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-sm text-glow-600 hover:text-glow-700 font-medium hover:underline"
+                        >
+                          + Add more files
+                        </button>
+                        {/* Hidden input for adding more files */}
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={(e) => e.target.files && handleFilesSelected(Array.from(e.target.files))} 
+                          className="hidden" 
+                          accept="application/pdf" 
+                          multiple 
+                        />
+                    </div>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2 mb-8">
+                      {files.map((item, index) => (
+                        <div key={item.id} className="flex items-center justify-between bg-white p-3 md:p-4 rounded-xl border border-gray-100 shadow-sm animate-slide-up group">
+                          <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+                            <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    onClick={() => moveFile(index, 'up')} 
+                                    disabled={index === 0}
+                                    className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                >
+                                    <ArrowUp size={14} />
+                                </button>
+                                <button 
+                                    onClick={() => moveFile(index, 'down')} 
+                                    disabled={index === files.length - 1}
+                                    className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                                >
+                                    <ArrowDown size={14} />
+                                </button>
                             </div>
-                          ))}
+                            <div className="w-8 h-8 md:w-10 md:h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FileIcon className="text-red-500 w-4 h-4 md:w-5 md:h-5" />
+                            </div>
+                            <div className="text-left overflow-hidden">
+                              <p className="font-semibold text-gray-700 truncate text-sm md:text-base">{item.file.name}</p>
+                              <p className="text-xs text-gray-400">{(item.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => removeFile(item.id)}
+                            className="p-1.5 md:p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full transition-colors flex-shrink-0"
+                          >
+                            <X size={18} />
+                          </button>
                         </div>
-                     </div>
-                  )}
-                  
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileChange} 
-                    className="hidden" 
-                    accept="application/pdf" 
-                    multiple 
-                  />
+                      ))}
+                    </div>
                 </div>
-              </div>
+              )}
 
               {files.length > 0 && (
-                <div className="mt-8 flex justify-center">
+                <div className="mt-4 flex justify-center">
                   <button 
                     onClick={handleMerge}
                     disabled={files.length < 2 || status === MergeStatus.PROCESSING}

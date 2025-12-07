@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, File as FileIcon, FileText, Loader2, CheckCircle, RefreshCw, Download, AlertCircle } from 'lucide-react';
+import { Upload, X, File as FileIcon, FileText, Loader2, CheckCircle, RefreshCw, Download, AlertCircle, Info } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { convertPdfToWord, downloadBlob } from '../utils/pdfHelpers';
 
@@ -122,6 +122,20 @@ export const PdfToWord: React.FC = () => {
                   <button onClick={() => setStatus(MergeStatus.IDLE)} className="p-1 hover:bg-red-100 rounded-full transition-colors">
                     <X size={16} />
                   </button>
+                </div>
+              )}
+
+              {/* Info Banner about simple extraction */}
+              {!file && (
+                <div className="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-4 flex items-start gap-3 text-blue-700">
+                    <Info size={20} className="flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-sm">Text Extraction Only</p>
+                        <p className="text-sm opacity-90">
+                            This tool extracts text and rebuilds it into a Word document. 
+                            Complex layouts, tables, and images might not be preserved perfectly.
+                        </p>
+                    </div>
                 </div>
               )}
 

@@ -10,6 +10,7 @@ export const PdfRotate: React.FC = () => {
   const [status, setStatus] = useState<MergeStatus>(MergeStatus.IDLE);
   const [rotatedPdfData, setRotatedPdfData] = useState<Uint8Array | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,8 +28,16 @@ export const PdfRotate: React.FC = () => {
       setErrorMessage(null);
       
       // Generate preview
-      const preview = await getPdfPreview(selectedFile);
-      setPreviewUrl(preview);
+      setIsPreviewLoading(true);
+      try {
+        const preview = await getPdfPreview(selectedFile);
+        setPreviewUrl(preview);
+      } catch (e) {
+        console.warn("Preview failed", e);
+        setErrorMessage("Could not generate preview, but you can still rotate the file. If the file is password protected, please remove the password first.");
+      } finally {
+        setIsPreviewLoading(false);
+      }
       
       event.target.value = '';
     }
@@ -41,6 +50,7 @@ export const PdfRotate: React.FC = () => {
     setStatus(MergeStatus.IDLE);
     setRotatedPdfData(null);
     setErrorMessage(null);
+    setIsPreviewLoading(false);
   };
 
   const rotateLeft = () => setRotation(prev => prev - 90);
@@ -48,11 +58,6 @@ export const PdfRotate: React.FC = () => {
 
   const handleProcess = async () => {
     if (!file) return;
-    
-    // If no rotation needed, just warn or allow?
-    if (rotation === 0) {
-        // Maybe user just wants to re-save, allow it.
-    }
     
     setStatus(MergeStatus.PROCESSING);
     setErrorMessage(null);
@@ -105,7 +110,6 @@ export const PdfRotate: React.FC = () => {
             </p>
           </div>
 
-          {/* Success State */}
           {status === MergeStatus.SUCCESS ? (
             <div className="flex flex-col items-center justify-center py-8 animate-fade-in">
               <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
@@ -138,13 +142,24 @@ export const PdfRotate: React.FC = () => {
                 <div className="mb-8 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 text-red-700 animate-fade-in shadow-sm">
                   <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-semibold text-sm">Rotation Failed</p>
+                    <p className="font-semibold text-sm">Error</p>
                     <p className="text-sm opacity-90">{errorMessage}</p>
                   </div>
                   <button onClick={() => setStatus(MergeStatus.IDLE)} className="p-1 hover:bg-red-100 rounded-full transition-colors">
                     <X size={16} />
                   </button>
                 </div>
+              )}
+              
+              {/* Preview Error Banner (if status is IDLE but preview failed) */}
+              {status === MergeStatus.IDLE && errorMessage && !rotatedPdfData && (
+                 <div className="mb-8 bg-amber-50 border border-amber-100 rounded-xl p-4 flex items-start gap-3 text-amber-700 animate-fade-in shadow-sm">
+                   <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
+                   <div className="flex-1">
+                     <p className="font-semibold text-sm">Preview Unavailable</p>
+                     <p className="text-sm opacity-90">{errorMessage}</p>
+                   </div>
+                 </div>
               )}
 
               {/* Upload Area */}
@@ -193,13 +208,19 @@ export const PdfRotate: React.FC = () => {
                         {/* Preview and Controls */}
                         <div className="flex flex-col items-center gap-8">
                             <div className="relative p-8 bg-gray-100 rounded-2xl border border-gray-200 shadow-inner">
-                                {previewUrl ? (
+                                {isPreviewLoading ? (
+                                    <div className="w-48 h-64 bg-gray-200 rounded flex flex-col items-center justify-center text-gray-400">
+                                        <Loader2 className="animate-spin mb-2" />
+                                        <span className="text-sm">Loading Preview...</span>
+                                    </div>
+                                ) : previewUrl ? (
                                     <div className="transition-transform duration-300 ease-out shadow-lg" style={{ transform: `rotate(${rotation}deg)` }}>
                                         <img src={previewUrl} alt="Preview" className="max-h-[300px] max-w-full rounded border border-gray-300 object-contain bg-white" />
                                     </div>
                                 ) : (
-                                    <div className="w-48 h-64 bg-gray-200 rounded flex items-center justify-center text-gray-400">
-                                        <Loader2 className="animate-spin" />
+                                    <div className="w-48 h-64 bg-gray-100 rounded flex flex-col items-center justify-center text-gray-400 border border-dashed border-gray-300">
+                                        <FileIcon className="mb-2 w-8 h-8 opacity-50" />
+                                        <span className="text-sm text-center px-4">Preview not available</span>
                                     </div>
                                 )}
                             </div>

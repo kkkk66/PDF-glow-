@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon, ArrowRight, Loader2, CheckCircle, Download, RefreshCw, AlertCircle, ArrowLeft } from 'lucide-react';
 import { UploadedFile, MergeStatus } from '../types';
 import { convertImagesToPdf, downloadPdfBlob } from '../utils/pdfHelpers';
@@ -9,6 +9,29 @@ export const JpgToPdf: React.FC = () => {
   const [pdfData, setPdfData] = useState<Uint8Array | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      files.forEach(f => {
+        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+      });
+    };
+  }, []); // Empty deps because we want this on unmount, but we need to check the files.
+  // Actually, to handle updates properly in useEffect cleanup without stale closures, a ref is better.
+  
+  const filesRef = useRef<UploadedFile[]>([]);
+  useEffect(() => {
+    filesRef.current = files;
+  }, [files]);
+  
+  useEffect(() => {
+      return () => {
+          filesRef.current.forEach(f => {
+              if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+          });
+      }
+  }, []);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -26,10 +49,11 @@ export const JpgToPdf: React.FC = () => {
 
   const removeFile = (id: string) => {
     setFiles(prev => {
-        const newFiles = prev.filter(f => f.id !== id);
-        const removed = prev.find(f => f.id === id);
-        if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
-        return newFiles;
+        const fileToRemove = prev.find(f => f.id === id);
+        if (fileToRemove?.previewUrl) {
+            URL.revokeObjectURL(fileToRemove.previewUrl);
+        }
+        return prev.filter(f => f.id !== id);
     });
     setErrorMessage(null);
     setStatus(MergeStatus.IDLE);

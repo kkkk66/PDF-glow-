@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
 import { PdfMerger } from './components/PdfMerger';
@@ -12,31 +13,105 @@ import { PdfDeletePages } from './components/PdfDeletePages';
 import { PdfWatermark } from './components/PdfWatermark';
 import { PdfEditor } from './components/PdfEditor';
 import { PdfPageNumbers } from './components/PdfPageNumbers';
-import { PdfOrganize } from './components/PdfOrganize';
+import { PdfOrganizer } from './components/PdfOrganizer';
+import { BlogPage } from './components/BlogPage';
+import { ToolContent } from './components/ToolContent';
 import { Footer } from './components/Footer';
 import { AdPlaceholder } from './components/AdPlaceholder';
 import { SeoContent } from './components/SeoContent';
 import { InstallPwa } from './components/InstallPwa';
+import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy, TermsOfService, CookiePolicy, AboutUs } from './components/LegalPages';
 import { ContactUs, HelpCenter, ReportIssue } from './components/SupportPages';
-import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, ArrowLeft, Home, Hash, LayoutGrid } from 'lucide-react';
+import { Sitemap } from './components/Sitemap';
+import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, ArrowLeft, Hash, Grid } from 'lucide-react';
 
 // Define all possible views
 type ViewState = 
-  | 'home'
-  | 'merge' | 'split' | 'compress' | 'word' | 'jpg' | 'pdftojpg' | 'rotate' | 'delete' | 'watermark' | 'editor' | 'numbers' | 'organize'
+  | 'home' | 'blog'
+  | 'merge' | 'split' | 'compress' | 'word' | 'jpg' | 'pdftojpg' | 'rotate' | 'delete' | 'watermark' | 'editor' | 'pagenumbers' | 'organize'
   | 'privacy' | 'terms' | 'cookies' | 'about'
-  | 'contact' | 'help' | 'report';
+  | 'contact' | 'help' | 'report' | 'sitemap';
+
+const VALID_VIEWS: ViewState[] = [
+  'home', 'blog', 'merge', 'split', 'compress', 'word', 'jpg', 'pdftojpg', 
+  'rotate', 'delete', 'watermark', 'editor', 'pagenumbers', 'organize', 'privacy', 'terms', 
+  'cookies', 'about', 'contact', 'help', 'report', 'sitemap'
+];
 
 function App() {
-  // DEFAULT VIEW IS HOME
-  const [activeView, setActiveView] = useState<ViewState>('home');
+  // Helper to get view from Hash
+  const getHashView = (): ViewState => {
+    const hash = window.location.hash.replace('#', '');
+    return VALID_VIEWS.includes(hash as ViewState) ? (hash as ViewState) : 'home';
+  };
+
+  const [activeView, setActiveView] = useState<ViewState>(getHashView);
+
+  // Sync with browser history and Update Page Title (Critical for SEO/AdSense)
+  useEffect(() => {
+    const handleHashChange = () => {
+      const newView = getHashView();
+      setActiveView(newView);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    
+    // Initial check
+    handleHashChange();
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Update Page Title dynamically based on active view
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      home: "PDF Glow - Free Online PDF Tools | Merge, Split, Edit & Compress",
+      blog: "PDF Tips & Tricks Blog - PDF Glow",
+      merge: "Merge PDF Files Free Online - Combine PDFs - PDF Glow",
+      split: "Split PDF Files Online - Extract Pages Free - PDF Glow",
+      compress: "Compress PDF Online - Reduce File Size Free - PDF Glow",
+      word: "Convert PDF to Word (DOCX) Free - PDF Glow",
+      jpg: "Convert JPG Images to PDF Online - PDF Glow",
+      pdftojpg: "Convert PDF to JPG Images High Quality - PDF Glow",
+      editor: "Edit PDF Online Free - Draw & Add Text - PDF Glow",
+      rotate: "Rotate PDF Pages Online - PDF Glow",
+      delete: "Delete PDF Pages Online - PDF Glow",
+      watermark: "Add Watermark to PDF Free - PDF Glow",
+      pagenumbers: "Add Page Numbers to PDF Online - PDF Glow",
+      organize: "Organize PDF Pages - Reorder & Sort Online - PDF Glow",
+      privacy: "Privacy Policy - PDF Glow",
+      terms: "Terms of Service - PDF Glow",
+      about: "About Us - PDF Glow",
+      cookies: "Cookie Policy - PDF Glow",
+      sitemap: "Sitemap - Site Directory | PDF Glow"
+    };
+    
+    document.title = titles[activeView] || "PDF Glow - Professional PDF Tools";
+    
+    // Also update meta description if possible (Advanced SEO)
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+        if (activeView === 'home') {
+            metaDesc.setAttribute('content', "Secure, free, and fast online PDF tools. Merge, split, compress, edit, and convert PDFs entirely in your browser.");
+        } else if (titles[activeView]) {
+            metaDesc.setAttribute('content', `Use PDF Glow's ${activeView} tool to manage your documents securely. Client-side processing ensures 100% privacy.`);
+        }
+    }
+
+  }, [activeView]);
+
+  // Update hash when navigating
+  const handleNavigate = (view: string) => {
+    window.location.hash = view;
+  };
 
   const tools = [
     { id: 'merge', label: 'Merge', icon: Layers, fullLabel: 'Merge PDFs' },
     { id: 'split', label: 'Split', icon: Scissors, fullLabel: 'Split PDF' },
     { id: 'compress', label: 'Compress', icon: Minimize2, fullLabel: 'Compress PDF' },
-    { id: 'organize', label: 'Organize', icon: LayoutGrid, fullLabel: 'Organize PDF' },
+    { id: 'organize', label: 'Organize', icon: Grid, fullLabel: 'Organize PDF' },
     { id: 'editor', label: 'Edit', icon: PenTool, fullLabel: 'Edit PDF' },
     { id: 'word', label: 'To Word', icon: FileText, fullLabel: 'PDF to Word' },
     { id: 'jpg', label: 'JPG to PDF', icon: Image, fullLabel: 'JPG to PDF' },
@@ -44,7 +119,7 @@ function App() {
     { id: 'rotate', label: 'Rotate', icon: RotateCw, fullLabel: 'Rotate PDF' },
     { id: 'delete', label: 'Delete', icon: Trash2, fullLabel: 'Delete Pages' },
     { id: 'watermark', label: 'Watermark', icon: Stamp, fullLabel: 'Watermark' },
-    { id: 'numbers', label: 'Numbers', icon: Hash, fullLabel: 'Page Numbers' },
+    { id: 'pagenumbers', label: 'Numbers', icon: Hash, fullLabel: 'Page Numbers' },
   ];
 
   const isToolView = tools.some(t => t.id === activeView);
@@ -53,10 +128,11 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 relative selection:bg-pink-200 selection:text-pink-900">
       
-      {/* Mobile App Install Banner */}
+      {/* Monetization & Compliance Components */}
       <InstallPwa />
+      <CookieConsent />
 
-      <Navbar onNavigate={(view) => setActiveView(view as any)} activeView={activeView} />
+      <Navbar onNavigate={handleNavigate} activeView={activeView} />
 
       <main className="flex-grow pt-24 pb-16 px-4 sm:px-6 relative overflow-hidden">
         {/* Decorative background elements */}
@@ -67,26 +143,31 @@ function App() {
           {/* Back to Home Button (Visible on all pages except Home) */}
           {!isHomeView && (
             <div className="mb-6 animate-fade-in flex justify-between items-center">
-              <button 
-                onClick={() => setActiveView('home')}
+              <a 
+                href="#home"
+                onClick={(e) => { e.preventDefault(); handleNavigate('home'); }}
                 className="flex items-center gap-2 text-gray-500 hover:text-glow-600 font-medium transition-colors"
               >
                 <ArrowLeft size={20} /> Back to Home
-              </button>
+              </a>
             </div>
           )}
 
           {/* Render Home Page */}
-          {activeView === 'home' && <HomePage onNavigate={(view) => setActiveView(view)} />}
+          {activeView === 'home' && <HomePage onNavigate={handleNavigate} />}
+          
+          {/* Render Blog Page */}
+          {activeView === 'blog' && <BlogPage />}
 
           {/* Render Tool Switcher (Only visible when a tool is active, for quick switching) */}
           {isToolView && (
             <div className="mb-10 -mx-4 px-4 md:mx-0 md:px-0 animate-slide-up">
                <div className="flex md:flex-wrap md:justify-center gap-2 overflow-x-auto pb-4 md:pb-0 snap-x hide-scrollbar">
                   {tools.map((tool) => (
-                    <button 
+                    <a 
                       key={tool.id}
-                      onClick={() => setActiveView(tool.id as any)}
+                      href={`#${tool.id}`}
+                      onClick={(e) => { e.preventDefault(); handleNavigate(tool.id); }}
                       className={`
                         flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap flex-shrink-0 snap-center
                         ${activeView === tool.id
@@ -98,7 +179,7 @@ function App() {
                       <tool.icon size={18} />
                       <span className="md:hidden">{tool.label}</span>
                       <span className="hidden md:inline">{tool.fullLabel}</span>
-                    </button>
+                    </a>
                   ))}
                </div>
             </div>
@@ -109,7 +190,6 @@ function App() {
             {activeView === 'merge' && <PdfMerger />}
             {activeView === 'split' && <PdfSplitter />}
             {activeView === 'compress' && <PdfCompressor />}
-            {activeView === 'organize' && <PdfOrganize />}
             {activeView === 'editor' && <PdfEditor />}
             {activeView === 'word' && <PdfToWord />}
             {activeView === 'jpg' && <JpgToPdf />}
@@ -117,7 +197,8 @@ function App() {
             {activeView === 'rotate' && <PdfRotate />}
             {activeView === 'delete' && <PdfDeletePages />}
             {activeView === 'watermark' && <PdfWatermark />}
-            {activeView === 'numbers' && <PdfPageNumbers />}
+            {activeView === 'pagenumbers' && <PdfPageNumbers />}
+            {activeView === 'organize' && <PdfOrganizer />}
             
             {/* Legal Pages */}
             {activeView === 'privacy' && <PrivacyPolicy />}
@@ -129,22 +210,26 @@ function App() {
             {activeView === 'contact' && <ContactUs />}
             {activeView === 'help' && <HelpCenter />}
             {activeView === 'report' && <ReportIssue />}
+            
+            {/* Sitemap */}
+            {activeView === 'sitemap' && <Sitemap onNavigate={handleNavigate} />}
           </div>
+          
+          {/* Tool Specific SEO Content (Crucial for AdSense) */}
+          {isToolView && <ToolContent toolId={activeView} />}
 
-          {/* Footer Ad & Content (Visible on all pages except Home, because Home has its own) */}
+          {/* Footer Ad & Content (Visible on all pages except Home) */}
           {!isHomeView && (
             <>
                 <div className="max-w-4xl mx-auto mt-12">
                     <AdPlaceholder className="h-32" />
                 </div>
-                {/* SEO Content only on tool views to aid relevance */}
-                {isToolView && <SeoContent />}
             </>
           )}
         </div>
       </main>
       
-      <Footer onNavigate={(view) => setActiveView(view as any)} />
+      <Footer onNavigate={handleNavigate} />
     </div>
   );
 }

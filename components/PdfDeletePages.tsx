@@ -25,12 +25,19 @@ export const PdfDeletePages: React.FC = () => {
       setResultPdfData(null);
       setErrorMessage(null);
       setSelectedPages([]);
+      setPreviews([]);
       
       // Generate previews
       setIsLoadingPreviews(true);
-      const generatedPreviews = await getPdfPagePreviews(selectedFile);
-      setPreviews(generatedPreviews);
-      setIsLoadingPreviews(false);
+      try {
+        const generatedPreviews = await getPdfPagePreviews(selectedFile);
+        setPreviews(generatedPreviews);
+      } catch (e) {
+        console.error(e);
+        setErrorMessage("Could not load page previews. File might be corrupted.");
+      } finally {
+        setIsLoadingPreviews(false);
+      }
       
       event.target.value = '';
     }
@@ -62,7 +69,7 @@ export const PdfDeletePages: React.FC = () => {
     if (!file || selectedPages.length === 0) return;
     
     // Prevent deleting all pages
-    if (selectedPages.length === previews.length) {
+    if (previews.length > 0 && selectedPages.length === previews.length) {
         setErrorMessage("You cannot delete all pages from the document.");
         return;
     }
@@ -118,7 +125,6 @@ export const PdfDeletePages: React.FC = () => {
             </p>
           </div>
 
-          {/* Success State */}
           {status === MergeStatus.SUCCESS ? (
             <div className="flex flex-col items-center justify-center py-8 animate-fade-in">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6 shadow-sm">
@@ -210,6 +216,10 @@ export const PdfDeletePages: React.FC = () => {
                                 <Loader2 className="animate-spin text-glow-500 w-10 h-10 mb-4" />
                                 <p className="text-gray-500">Generating page previews...</p>
                             </div>
+                        ) : previews.length === 0 ? (
+                             <div className="text-center py-10 text-gray-400 bg-gray-50 rounded-xl m-4">
+                                <p>No pages found or preview generation failed.</p>
+                             </div>
                         ) : (
                             <>
                                 <div className="mb-6 flex justify-between items-center px-4">
@@ -233,7 +243,11 @@ export const PdfDeletePages: React.FC = () => {
                                                     }
                                                 `}
                                             >
-                                                <img src={preview} alt={`Page ${index + 1}`} className="w-full h-full object-contain bg-white" />
+                                                {preview ? (
+                                                     <img src={preview} alt={`Page ${index + 1}`} className="w-full h-full object-contain bg-white" />
+                                                ) : (
+                                                     <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 text-xs">No Preview</div>
+                                                )}
                                                 
                                                 {/* Page Number */}
                                                 <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded-md backdrop-blur-sm">
@@ -273,7 +287,7 @@ export const PdfDeletePages: React.FC = () => {
               </div>
 
               {/* Action Bar */}
-              {file && !isLoadingPreviews && (
+              {file && !isLoadingPreviews && previews.length > 0 && (
                 <div className="mt-8 flex justify-center">
                   <button 
                     onClick={handleDelete}

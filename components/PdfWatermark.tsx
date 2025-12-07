@@ -12,6 +12,7 @@ export const PdfWatermark: React.FC = () => {
   const [status, setStatus] = useState<MergeStatus>(MergeStatus.IDLE);
   const [watermarkedPdfData, setWatermarkedPdfData] = useState<Uint8Array | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,8 +27,16 @@ export const PdfWatermark: React.FC = () => {
       setWatermarkedPdfData(null);
       setErrorMessage(null);
       
-      const preview = await getPdfPreview(selectedFile);
-      setPreviewUrl(preview);
+      setIsPreviewLoading(true);
+      try {
+        const preview = await getPdfPreview(selectedFile);
+        setPreviewUrl(preview);
+      } catch (e) {
+        console.warn("Preview gen failed", e);
+        setErrorMessage("Preview generation failed, but you can still add a watermark.");
+      } finally {
+        setIsPreviewLoading(false);
+      }
       
       event.target.value = '';
     }
@@ -40,6 +49,7 @@ export const PdfWatermark: React.FC = () => {
     setStatus(MergeStatus.IDLE);
     setWatermarkedPdfData(null);
     setErrorMessage(null);
+    setIsPreviewLoading(false);
   };
 
   const handleProcess = async () => {
@@ -124,7 +134,7 @@ export const PdfWatermark: React.FC = () => {
                 <div className="mb-8 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start gap-3 text-red-700 animate-fade-in shadow-sm">
                   <AlertCircle size={20} className="flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
-                    <p className="font-semibold text-sm">Operation Failed</p>
+                    <p className="font-semibold text-sm">Error</p>
                     <p className="text-sm opacity-90">{errorMessage}</p>
                   </div>
                   <button onClick={() => setStatus(MergeStatus.IDLE)} className="p-1 hover:bg-red-100 rounded-full transition-colors">
@@ -240,7 +250,12 @@ export const PdfWatermark: React.FC = () => {
 
                         {/* Right: Preview */}
                         <div className="w-full md:w-1/2 p-4 bg-gray-100 rounded-2xl flex items-center justify-center min-h-[400px]">
-                            {previewUrl ? (
+                            {isPreviewLoading ? (
+                                <div className="flex flex-col items-center text-gray-400">
+                                    <Loader2 className="animate-spin mb-2" />
+                                    <span className="text-sm">Generating Preview...</span>
+                                </div>
+                            ) : previewUrl ? (
                                 <div className="relative shadow-lg max-w-full">
                                     <img src={previewUrl} alt="Preview" className="max-h-[400px] w-auto bg-white rounded border border-gray-300" />
                                     {/* Visual Simulation of Watermark Overlay */}
@@ -265,9 +280,9 @@ export const PdfWatermark: React.FC = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center text-gray-400">
-                                    <Loader2 className="animate-spin mb-2" />
-                                    <span className="text-sm">Loading Preview...</span>
+                                <div className="flex flex-col items-center text-gray-400 p-8 border border-dashed border-gray-300 rounded-xl">
+                                    <FileIcon className="mb-2 w-8 h-8 opacity-50" />
+                                    <span className="text-sm">Preview Unavailable</span>
                                 </div>
                             )}
                         </div>

@@ -165,8 +165,10 @@ export const PdfEditor: React.FC = () => {
           clientX = e.touches[0].clientX;
           clientY = e.touches[0].clientY;
       } else {
-          clientX = (e as React.MouseEvent).clientX;
-          clientY = (e as React.MouseEvent).clientY;
+          // Explicit cast to React.MouseEvent
+          const mouseEvent = e as React.MouseEvent;
+          clientX = mouseEvent.clientX;
+          clientY = mouseEvent.clientY;
       }
       
       return {
