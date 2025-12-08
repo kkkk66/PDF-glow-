@@ -1,5 +1,6 @@
 import React from 'react';
 import { Heart, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
+import { ROUTES } from '../App';
 
 interface FooterProps {
   onNavigate?: (view: string) => void;
@@ -35,11 +36,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="text-left">
                 <h4 className="font-bold text-gray-900 mb-4">Tools</h4>
                 <ul className="text-sm text-gray-500 space-y-2">
-                    <li><a href="#" onClick={(e) => handleNav(e, 'merge')} className="hover:text-glow-600 transition-colors">Merge PDF</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'split')} className="hover:text-glow-600 transition-colors">Split PDF</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'compress')} className="hover:text-glow-600 transition-colors">Compress PDF</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'pdftojpg')} className="hover:text-glow-600 transition-colors">PDF to JPG</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'organize')} className="hover:text-glow-600 transition-colors">Organize PDF</a></li>
+                    <li><a href={ROUTES.merge} onClick={(e) => handleNav(e, 'merge')} className="hover:text-glow-600 transition-colors">Merge PDF</a></li>
+                    <li><a href={ROUTES.split} onClick={(e) => handleNav(e, 'split')} className="hover:text-glow-600 transition-colors">Split PDF</a></li>
+                    <li><a href={ROUTES.compress} onClick={(e) => handleNav(e, 'compress')} className="hover:text-glow-600 transition-colors">Compress PDF</a></li>
+                    <li><a href={ROUTES.pdftojpg} onClick={(e) => handleNav(e, 'pdftojpg')} className="hover:text-glow-600 transition-colors">PDF to JPG</a></li>
+                    <li><a href={ROUTES.organize} onClick={(e) => handleNav(e, 'organize')} className="hover:text-glow-600 transition-colors">Organize PDF</a></li>
                 </ul>
             </div>
 
@@ -76,11 +77,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="text-left">
                 <h4 className="font-bold text-gray-900 mb-4">Legal</h4>
                 <ul className="text-sm text-gray-500 space-y-2">
-                    <li><a href="#" onClick={(e) => handleNav(e, 'privacy')} className="hover:text-glow-600 transition-colors">Privacy Policy</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'terms')} className="hover:text-glow-600 transition-colors">Terms of Service</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'cookies')} className="hover:text-glow-600 transition-colors">Cookie Policy</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'about')} className="hover:text-glow-600 transition-colors">About Us</a></li>
-                    <li><a href="#" onClick={(e) => handleNav(e, 'sitemap')} className="hover:text-glow-600 transition-colors">Sitemap</a></li>
+                    <li><a href={ROUTES.privacy} onClick={(e) => handleNav(e, 'privacy')} className="hover:text-glow-600 transition-colors">Privacy Policy</a></li>
+                    <li><a href={ROUTES.terms} onClick={(e) => handleNav(e, 'terms')} className="hover:text-glow-600 transition-colors">Terms of Service</a></li>
+                    <li><a href={ROUTES.cookies} onClick={(e) => handleNav(e, 'cookies')} className="hover:text-glow-600 transition-colors">Cookie Policy</a></li>
+                    <li><a href={ROUTES.about} onClick={(e) => handleNav(e, 'about')} className="hover:text-glow-600 transition-colors">About Us</a></li>
+                    <li><a href={ROUTES.sitemap} onClick={(e) => handleNav(e, 'sitemap')} className="hover:text-glow-600 transition-colors">Sitemap</a></li>
                 </ul>
             </div>
         </div>

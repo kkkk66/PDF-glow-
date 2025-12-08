@@ -1,14 +1,14 @@
 import React from 'react';
 import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, BookOpen, Shield, HelpCircle, Mail, Map, ArrowRight, Hash, Grid } from 'lucide-react';
+import { ROUTES } from '../App';
 
 interface SitemapProps {
   onNavigate: (view: string) => void;
 }
 
 export const Sitemap: React.FC<SitemapProps> = ({ onNavigate }) => {
-  const handleNav = (e: React.MouseEvent, href: string) => {
+  const handleNav = (e: React.MouseEvent, href: string, view: string) => {
     e.preventDefault();
-    const view = href.replace('#', '');
     onNavigate(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -18,35 +18,35 @@ export const Sitemap: React.FC<SitemapProps> = ({ onNavigate }) => {
       title: "PDF Manipulation Tools",
       description: "Core utilities to manage PDF structure.",
       items: [
-        { label: "Merge PDF", href: "#merge", icon: Layers, desc: "Combine multiple PDF documents into a single unified file." },
-        { label: "Split PDF", href: "#split", icon: Scissors, desc: "Extract specific pages or split a document into individual pages." },
-        { label: "Compress PDF", href: "#compress", icon: Minimize2, desc: "Reduce file size while maintaining document quality." },
-        { label: "Organize PDF", href: "#organize", icon: Grid, desc: "Rearrange, sort, and reorder pages visually." },
-        { label: "Rotate PDF", href: "#rotate", icon: RotateCw, desc: "Permanently rotate PDF pages 90, 180, or 270 degrees." },
-        { label: "Delete Pages", href: "#delete", icon: Trash2, desc: "Remove unwanted pages from your PDF document." },
-        { label: "Add Page Numbers", href: "#pagenumbers", icon: Hash, desc: "Add sequential page numbers to your document." },
+        { label: "Merge PDF", view: "merge", href: ROUTES.merge, icon: Layers, desc: "Combine multiple PDF documents into a single unified file." },
+        { label: "Split PDF", view: "split", href: ROUTES.split, icon: Scissors, desc: "Extract specific pages or split a document into individual pages." },
+        { label: "Compress PDF", view: "compress", href: ROUTES.compress, icon: Minimize2, desc: "Reduce file size while maintaining document quality." },
+        { label: "Organize PDF", view: "organize", href: ROUTES.organize, icon: Grid, desc: "Rearrange, sort, and reorder pages visually." },
+        { label: "Rotate PDF", view: "rotate", href: ROUTES.rotate, icon: RotateCw, desc: "Permanently rotate PDF pages 90, 180, or 270 degrees." },
+        { label: "Delete Pages", view: "delete", href: ROUTES.delete, icon: Trash2, desc: "Remove unwanted pages from your PDF document." },
+        { label: "Add Page Numbers", view: "pagenumbers", href: ROUTES.pagenumbers, icon: Hash, desc: "Add sequential page numbers to your document." },
       ]
     },
     {
       title: "Converters & Editing",
       description: "Transform and modify your documents.",
       items: [
-        { label: "PDF to Word", href: "#word", icon: FileText, desc: "Convert PDF documents to editable Microsoft Word (.docx) files." },
-        { label: "JPG to PDF", href: "#jpg", icon: Image, desc: "Convert images (JPG, PNG) into a PDF document." },
-        { label: "PDF to JPG", href: "#pdftojpg", icon: Images, desc: "Extract pages from a PDF and save them as high-quality images." },
-        { label: "Edit PDF", href: "#editor", icon: PenTool, desc: "Add text, highlights, and drawings to your PDF." },
-        { label: "Watermark", href: "#watermark", icon: Stamp, desc: "Stamp text watermarks on your document for security." },
+        { label: "PDF to Word", view: "word", href: ROUTES.word, icon: FileText, desc: "Convert PDF documents to editable Microsoft Word (.docx) files." },
+        { label: "JPG to PDF", view: "jpg", href: ROUTES.jpg, icon: Image, desc: "Convert images (JPG, PNG) into a PDF document." },
+        { label: "PDF to JPG", view: "pdftojpg", href: ROUTES.pdftojpg, icon: Images, desc: "Extract pages from a PDF and save them as high-quality images." },
+        { label: "Edit PDF", view: "editor", href: ROUTES.editor, icon: PenTool, desc: "Add text, highlights, and drawings to your PDF." },
+        { label: "Watermark", view: "watermark", href: ROUTES.watermark, icon: Stamp, desc: "Stamp text watermarks on your document for security." },
       ]
     },
     {
       title: "Resources & Support",
       description: "Helpful guides and legal information.",
       items: [
-        { label: "Blog & Tips", href: "#blog", icon: BookOpen, desc: "Tutorials and articles about PDF management." },
-        { label: "Help Center", href: "#help", icon: HelpCircle, desc: "Get support via WhatsApp or Email." },
-        { label: "Contact Us", href: "#contact", icon: Mail, desc: "Reach out to our team." },
-        { label: "Privacy Policy", href: "#privacy", icon: Shield, desc: "Learn how we protect your data." },
-        { label: "Terms of Service", href: "#terms", icon: Shield, desc: "Terms and conditions of use." },
+        { label: "Blog & Tips", view: "blog", href: ROUTES.blog, icon: BookOpen, desc: "Tutorials and articles about PDF management." },
+        { label: "Help Center", view: "help", href: ROUTES.help, icon: HelpCircle, desc: "Get support via WhatsApp or Email." },
+        { label: "Contact Us", view: "contact", href: ROUTES.contact, icon: Mail, desc: "Reach out to our team." },
+        { label: "Privacy Policy", view: "privacy", href: ROUTES.privacy, icon: Shield, desc: "Learn how we protect your data." },
+        { label: "Terms of Service", view: "terms", href: ROUTES.terms, icon: Shield, desc: "Terms and conditions of use." },
       ]
     }
   ];
@@ -77,7 +77,7 @@ export const Sitemap: React.FC<SitemapProps> = ({ onNavigate }) => {
                         <a 
                             key={i} 
                             href={item.href}
-                            onClick={(e) => handleNav(e, item.href)}
+                            onClick={(e) => handleNav(e, item.href, item.view)}
                             className="flex items-start gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors group border border-transparent hover:border-gray-100 cursor-pointer"
                         >
                             <div className="p-3 bg-gray-100 text-gray-500 rounded-xl group-hover:bg-glow-50 group-hover:text-glow-600 transition-colors">

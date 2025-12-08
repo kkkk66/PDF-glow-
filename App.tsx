@@ -32,38 +32,63 @@ type ViewState =
   | 'privacy' | 'terms' | 'cookies' | 'about'
   | 'contact' | 'help' | 'report' | 'sitemap';
 
-const VALID_VIEWS: ViewState[] = [
-  'home', 'blog', 'merge', 'split', 'compress', 'word', 'jpg', 'pdftojpg', 
-  'rotate', 'delete', 'watermark', 'editor', 'pagenumbers', 'organize', 'privacy', 'terms', 
-  'cookies', 'about', 'contact', 'help', 'report', 'sitemap'
-];
+// --- ROUTE CONFIGURATION ---
+// Central source of truth for URL structure
+export const ROUTES: Record<ViewState, string> = {
+  home: '/',
+  blog: '/blog',
+  merge: '/tools/merge-pdf',
+  split: '/tools/split-pdf',
+  compress: '/tools/compress-pdf',
+  organize: '/tools/organize-pdf',
+  editor: '/tools/edit-pdf',
+  word: '/tools/pdf-to-word',
+  jpg: '/tools/jpg-to-pdf',
+  pdftojpg: '/tools/pdf-to-jpg',
+  rotate: '/tools/rotate-pdf',
+  delete: '/tools/delete-pdf-pages',
+  watermark: '/tools/add-watermark',
+  pagenumbers: '/tools/page-numbers',
+  privacy: '/privacy-policy',
+  terms: '/terms-of-service',
+  cookies: '/cookie-policy',
+  about: '/about-us',
+  contact: '/contact-us',
+  help: '/help-center',
+  report: '/report-issue',
+  sitemap: '/sitemap'
+};
 
 function App() {
-  // Helper to get view from Hash
-  const getHashView = (): ViewState => {
-    const hash = window.location.hash.replace('#', '');
-    return VALID_VIEWS.includes(hash as ViewState) ? (hash as ViewState) : 'home';
+  // Helper to determine view from current window location path
+  const getPathView = (): ViewState => {
+    const path = window.location.pathname;
+    
+    // Find the view key that matches the current path
+    const view = (Object.keys(ROUTES) as ViewState[]).find(key => ROUTES[key] === path);
+    
+    // Default to home if no match found
+    return view || 'home';
   };
 
-  const [activeView, setActiveView] = useState<ViewState>(getHashView);
+  const [activeView, setActiveView] = useState<ViewState>(getPathView);
 
   // Sync with browser history and Update Page Title (Critical for SEO/AdSense)
   useEffect(() => {
-    const handleHashChange = () => {
-      const newView = getHashView();
-      setActiveView(newView);
+    const handlePopState = () => {
+      setActiveView(getPathView());
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handlePopState);
     
-    // Initial check
-    handleHashChange();
+    // Also handle initial load to handle redirects/rewrites correctly
+    setActiveView(getPathView());
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Update Page Title dynamically based on active view
+  // Update Page Title and Meta dynamically based on active view
   useEffect(() => {
     const titles: Record<string, string> = {
       home: "PDF Glow - Free Online PDF Tools | Merge, Split, Edit & Compress",
@@ -89,7 +114,7 @@ function App() {
     
     document.title = titles[activeView] || "PDF Glow - Professional PDF Tools";
     
-    // Also update meta description if possible (Advanced SEO)
+    // Update Meta Description
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
         if (activeView === 'home') {
@@ -98,12 +123,26 @@ function App() {
             metaDesc.setAttribute('content', `Use PDF Glow's ${activeView} tool to manage your documents securely. Client-side processing ensures 100% privacy.`);
         }
     }
+    
+    // Update Canonical URL
+    let linkCanonical = document.querySelector('link[rel="canonical"]');
+    if (!linkCanonical) {
+      linkCanonical = document.createElement('link');
+      linkCanonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(linkCanonical);
+    }
+    linkCanonical.setAttribute('href', `https://pdf-glow.vercel.app${ROUTES[activeView]}`);
 
   }, [activeView]);
 
-  // Update hash when navigating
+  // Navigate function using History API
   const handleNavigate = (view: string) => {
-    window.location.hash = view;
+    const targetView = view as ViewState;
+    if (ROUTES[targetView]) {
+      window.history.pushState({}, '', ROUTES[targetView]);
+      setActiveView(targetView);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const tools = [
@@ -143,7 +182,7 @@ function App() {
           {!isHomeView && (
             <div className="mb-6 animate-fade-in flex justify-between items-center">
               <a 
-                href="#home"
+                href="/"
                 onClick={(e) => { e.preventDefault(); handleNavigate('home'); }}
                 className="flex items-center gap-2 text-gray-500 hover:text-glow-600 font-medium transition-colors"
               >
@@ -165,7 +204,7 @@ function App() {
                   {tools.map((tool) => (
                     <a 
                       key={tool.id}
-                      href={`#${tool.id}`}
+                      href={ROUTES[tool.id as ViewState]}
                       onClick={(e) => { e.preventDefault(); handleNavigate(tool.id); }}
                       className={`
                         flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap flex-shrink-0 snap-center

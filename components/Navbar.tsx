@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, ShieldCheck, Menu, X, BookOpen, Search, Map } from 'lucide-react';
 import { SearchModal } from './SearchModal';
+import { ROUTES } from '../App';
 
 interface NavbarProps {
   onNavigate?: (view: string) => void;
@@ -28,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, activeView }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
             {/* Logo Section */}
-            <a href="#home" onClick={(e) => { e.preventDefault(); handleNavigation('home'); }} className="flex items-center space-x-2 md:space-x-3 group cursor-pointer select-none">
+            <a href="/" onClick={(e) => { e.preventDefault(); handleNavigation('home'); }} className="flex items-center space-x-2 md:space-x-3 group cursor-pointer select-none">
               <div className="relative">
                 <div className="absolute inset-0 bg-glow-400 blur-lg opacity-20 group-hover:opacity-40 transition-opacity rounded-full"></div>
                 <div className="relative bg-gradient-to-br from-glow-400 to-glow-600 p-2 md:p-2.5 rounded-xl shadow-glow text-white">
@@ -44,21 +45,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, activeView }) => {
             <div className="hidden md:flex items-center space-x-8">
               <div className="flex items-center space-x-2">
                 <a 
-                  href="#home"
+                  href={ROUTES.home}
                   onClick={(e) => { e.preventDefault(); handleNavigation('home'); }} 
                   className={`px-4 py-2 rounded-full transition-all duration-200 ${isHomeActive ? 'bg-glow-50 text-glow-600 font-bold shadow-sm border border-glow-100' : 'text-gray-600 hover:text-glow-600 font-medium hover:bg-gray-50'}`}
                 >
                   Home
                 </a>
                 <a 
-                  href="#merge"
+                  href={ROUTES.merge}
                   onClick={(e) => { e.preventDefault(); handleNavigation('merge'); }} 
                   className={`px-4 py-2 rounded-full transition-all duration-200 ${isToolsActive ? 'bg-glow-50 text-glow-600 font-bold shadow-sm border border-glow-100' : 'text-gray-600 hover:text-glow-600 font-medium hover:bg-gray-50'}`}
                 >
                   Tools
                 </a>
                 <a 
-                  href="#blog"
+                  href={ROUTES.blog}
                   onClick={(e) => { e.preventDefault(); handleNavigation('blog'); }} 
                   className={`px-4 py-2 rounded-full transition-all duration-200 ${isBlogActive ? 'bg-glow-50 text-glow-600 font-bold shadow-sm border border-glow-100' : 'text-gray-600 hover:text-glow-600 font-medium hover:bg-gray-50'}`}
                 >
@@ -101,28 +102,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onNavigate, activeView }) => {
           <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-100 shadow-xl animate-fade-in-up">
             <div className="p-4 space-y-3">
                <a 
-                  href="#home"
+                  href={ROUTES.home}
                   onClick={(e) => { e.preventDefault(); handleNavigation('home'); }}
                   className={`block w-full text-left px-4 py-3 rounded-xl font-semibold transition-colors ${isHomeActive ? 'bg-glow-50 text-glow-600' : 'hover:bg-gray-50 text-gray-700'}`}
                >
                   Home
                </a>
                <a 
-                  href="#merge"
+                  href={ROUTES.merge}
                   onClick={(e) => { e.preventDefault(); handleNavigation('merge'); }}
                   className={`block w-full text-left px-4 py-3 rounded-xl font-semibold transition-colors ${isToolsActive ? 'bg-glow-50 text-glow-600' : 'hover:bg-gray-50 text-gray-700'}`}
                >
                   All Tools
                </a>
                <a 
-                  href="#blog"
+                  href={ROUTES.blog}
                   onClick={(e) => { e.preventDefault(); handleNavigation('blog'); }}
                   className={`block w-full text-left px-4 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2 ${isBlogActive ? 'bg-glow-50 text-glow-600' : 'hover:bg-gray-50 text-gray-700'}`}
                >
                   <BookOpen size={16} /> Blog & Tips
                </a>
                <a 
-                  href="#sitemap"
+                  href={ROUTES.sitemap}
                   onClick={(e) => { e.preventDefault(); handleNavigation('sitemap'); }}
                   className="block w-full text-left px-4 py-3 rounded-xl font-semibold transition-colors flex items-center gap-2 hover:bg-gray-50 text-gray-700"
                >
