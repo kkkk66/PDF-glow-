@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdPlaceholder } from './AdPlaceholder';
+import { HighPerformanceAd } from './HighPerformanceAd';
 import { Layers, Upload, Download, ArrowRight, Star, Shield, Zap, MousePointer2 } from 'lucide-react';
 
 interface HomePageProps {
@@ -45,12 +45,17 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* 2. PRIMARY ADVERTISEMENT (Above Fold) */}
+      {/* 2. PRIMARY ADVERTISEMENT (Above Fold) - 728x90 */}
       <div className="my-12">
         <div className="text-center mb-2">
             <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Sponsored</span>
         </div>
-        <AdPlaceholder className="h-[250px] shadow-sm bg-white" />
+        <HighPerformanceAd 
+            adKey="e0ef8947756497cc1372431e883968a5" 
+            width={728} 
+            height={90} 
+            className="shadow-sm bg-white rounded-lg"
+        />
       </div>
 
       {/* 3. HOW TO USE SECTION (With "Screenshots") */}
@@ -136,10 +141,20 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* 4. SECONDARY ADVERTISEMENT (Mid Page) */}
-      <div className="my-12 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <AdPlaceholder className="h-[280px] bg-white shadow-sm" />
-        <AdPlaceholder className="h-[280px] bg-white shadow-sm" />
+      {/* 4. SECONDARY ADVERTISEMENT (Mid Page) - 160x300 Side by Side */}
+      <div className="my-12 flex flex-wrap justify-center gap-8">
+        <HighPerformanceAd 
+            adKey="282d59ad52347299b6a5411bb99e0e8f" 
+            width={160} 
+            height={300} 
+            className="bg-white shadow-sm rounded-lg"
+        />
+        <HighPerformanceAd 
+            adKey="282d59ad52347299b6a5411bb99e0e8f" 
+            width={160} 
+            height={300} 
+            className="hidden md:flex bg-white shadow-sm rounded-lg"
+        />
       </div>
 
       {/* 5. WHY CHOOSE US */}
@@ -170,7 +185,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
       {/* 6. BOTTOM ADVERTISEMENT */}
       <div className="my-12">
-        <AdPlaceholder className="h-[200px] bg-gray-50" />
+        <HighPerformanceAd 
+            adKey="e0ef8947756497cc1372431e883968a5" 
+            width={728} 
+            height={90} 
+            className="shadow-sm bg-gray-50 rounded-lg"
+        />
       </div>
 
       {/* 7. CTA - ALL TOOLS */}

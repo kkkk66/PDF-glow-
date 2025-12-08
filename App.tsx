@@ -16,7 +16,7 @@ import { PdfOrganizer } from './components/PdfOrganizer';
 import { BlogPage } from './components/BlogPage';
 import { ToolContent } from './components/ToolContent';
 import { Footer } from './components/Footer';
-import { AdPlaceholder } from './components/AdPlaceholder';
+import { HighPerformanceAd } from './components/HighPerformanceAd';
 import { SeoContent } from './components/SeoContent';
 import { InstallPwa } from './components/InstallPwa';
 import { CookieConsent } from './components/CookieConsent';
@@ -260,7 +260,13 @@ function App() {
           {!isHomeView && (
             <>
                 <div className="max-w-4xl mx-auto mt-12">
-                    <AdPlaceholder className="h-32" />
+                    {/* Replaced AdPlaceholder with the 728x90 Ad Code provided */}
+                    <HighPerformanceAd 
+                        adKey="e0ef8947756497cc1372431e883968a5" 
+                        width={728} 
+                        height={90} 
+                        className="shadow-sm"
+                    />
                 </div>
             </>
           )}
