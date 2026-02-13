@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, ArrowRight, FileText, Layers, Scissors, Minimize2, Image, Images, RotateCw, Trash2, Stamp, PenTool, BookOpen, Shield, HelpCircle, Mail, Map, Hash, Grid } from 'lucide-react';
+import { Search, X, ArrowRight, FileText, Layers, Scissors, Minimize2, Image, Images, RotateCw, Trash2, Stamp, PenTool, BookOpen, Shield, HelpCircle, Mail, Map, Hash, Grid, Unlock } from 'lucide-react';
 
 interface SearchItem {
   id: string;
@@ -21,6 +22,7 @@ const SEARCH_ITEMS: SearchItem[] = [
   { id: 'pdftojpg', title: 'PDF to JPG', description: 'Convert PDF pages to images', icon: Images, category: 'Tools' },
   { id: 'rotate', title: 'Rotate PDF', description: 'Rotate pages left or right', icon: RotateCw, category: 'Tools' },
   { id: 'delete', title: 'Delete Pages', description: 'Remove specific pages', icon: Trash2, category: 'Tools' },
+  { id: 'unlock', title: 'Unlock PDF', description: 'Remove PDF password', icon: Unlock, category: 'Tools' },
   { id: 'watermark', title: 'Watermark', description: 'Add text stamp to PDF', icon: Stamp, category: 'Tools' },
   { id: 'pagenumbers', title: 'Page Numbers', description: 'Add page numbers to PDF', icon: Hash, category: 'Tools' },
   

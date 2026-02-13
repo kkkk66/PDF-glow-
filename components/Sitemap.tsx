@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, BookOpen, Shield, HelpCircle, Mail, Map, ArrowRight, Hash, Grid } from 'lucide-react';
+import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, BookOpen, Shield, HelpCircle, Mail, Map, ArrowRight, Hash, Grid, Unlock } from 'lucide-react';
 import { ROUTES } from '../App';
 
 interface SitemapProps {
@@ -35,6 +36,7 @@ export const Sitemap: React.FC<SitemapProps> = ({ onNavigate }) => {
         { label: "JPG to PDF", view: "jpg", href: ROUTES.jpg, icon: Image, desc: "Convert images (JPG, PNG) into a PDF document." },
         { label: "PDF to JPG", view: "pdftojpg", href: ROUTES.pdftojpg, icon: Images, desc: "Extract pages from a PDF and save them as high-quality images." },
         { label: "Edit PDF", view: "editor", href: ROUTES.editor, icon: PenTool, desc: "Add text, highlights, and drawings to your PDF." },
+        { label: "Unlock PDF", view: "unlock", href: ROUTES.unlock, icon: Unlock, desc: "Remove passwords and security restrictions." },
         { label: "Watermark", view: "watermark", href: ROUTES.watermark, icon: Stamp, desc: "Stamp text watermarks on your document for security." },
       ]
     },

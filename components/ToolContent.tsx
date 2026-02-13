@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HelpCircle, Shield, Zap, Info, FileText, CheckCircle2 } from 'lucide-react';
 
@@ -162,6 +163,25 @@ const contentMap: Record<string, {
     faq: [
       { q: "Can I change the font style?", a: "Currently, we use a standard professional font to ensure compatibility across all devices." },
       { q: "Does it work on large files?", a: "Yes, the tool processes every page efficiently on your device." }
+    ]
+  },
+  unlock: {
+    title: "Unlock PDF - Remove Password Security",
+    description: "Unlock password-protected PDF files instantly. Remove owner restrictions and user passwords so you can edit, print, or copy text from your documents freely.",
+    steps: [
+      "Select your password-protected PDF file.",
+      "Enter the password (if required to open the file).",
+      "Click 'Unlock PDF' to decrypt the document.",
+      "Download the new version with all restrictions removed."
+    ],
+    features: [
+      { title: "Decryption Engine", desc: "Removes standard PDF encryption including RC4 and AES." },
+      { title: "Instant Unlock", desc: "No upload waiting time. Decryption happens on your device CPU." },
+      { title: "Secure Handling", desc: "Your password is never sent to any server. It stays in your browser memory." }
+    ],
+    faq: [
+      { q: "Can it crack unknown passwords?", a: "No. You typically need to know the password to open the file first. This tool is for removing known passwords permanently." },
+      { q: "Is it safe?", a: "Yes. Since it runs client-side, your password and document remain private." }
     ]
   }
 };

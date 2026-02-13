@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { HomePage } from './components/HomePage';
@@ -13,6 +14,7 @@ import { PdfWatermark } from './components/PdfWatermark';
 import { PdfEditor } from './components/PdfEditor';
 import { PdfPageNumbers } from './components/PdfPageNumbers';
 import { PdfOrganizer } from './components/PdfOrganizer';
+import { PdfProtect } from './components/PdfProtect'; // Import Unlock Tool
 import { BlogPage } from './components/BlogPage';
 import { ToolContent } from './components/ToolContent';
 import { Footer } from './components/Footer';
@@ -23,12 +25,12 @@ import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy, TermsOfService, CookiePolicy, AboutUs } from './components/LegalPages';
 import { ContactUs, HelpCenter, ReportIssue } from './components/SupportPages';
 import { Sitemap } from './components/Sitemap';
-import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, ArrowLeft, Hash, Grid } from 'lucide-react';
+import { Layers, Scissors, Minimize2, FileText, Image, Images, RotateCw, Trash2, Stamp, PenTool, ArrowLeft, Hash, Grid, Unlock } from 'lucide-react';
 
 // Define all possible views
 type ViewState = 
   | 'home' | 'blog'
-  | 'merge' | 'split' | 'compress' | 'word' | 'jpg' | 'pdftojpg' | 'rotate' | 'delete' | 'watermark' | 'editor' | 'pagenumbers' | 'organize'
+  | 'merge' | 'split' | 'compress' | 'word' | 'jpg' | 'pdftojpg' | 'rotate' | 'delete' | 'watermark' | 'editor' | 'pagenumbers' | 'organize' | 'unlock'
   | 'privacy' | 'terms' | 'cookies' | 'about'
   | 'contact' | 'help' | 'report' | 'sitemap';
 
@@ -49,6 +51,7 @@ export const ROUTES: Record<ViewState, string> = {
   delete: '/tools/delete-pdf-pages',
   watermark: '/tools/add-watermark',
   pagenumbers: '/tools/page-numbers',
+  unlock: '/tools/unlock-pdf', // New Route
   privacy: '/privacy-policy',
   terms: '/terms-of-service',
   cookies: '/cookie-policy',
@@ -61,8 +64,12 @@ export const ROUTES: Record<ViewState, string> = {
 
 function App() {
   // Helper to determine view from current window location path
+  // ROBUST PATH MATCHING: Handles trailing slashes
   const getPathView = (): ViewState => {
-    const path = window.location.pathname;
+    let path = window.location.pathname;
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+    }
     
     // Find the view key that matches the current path
     const view = (Object.keys(ROUTES) as ViewState[]).find(key => ROUTES[key] === path);
@@ -105,6 +112,7 @@ function App() {
       watermark: "Add Watermark to PDF Free - PDF Glow",
       pagenumbers: "Add Page Numbers to PDF Online - PDF Glow",
       organize: "Organize PDF Pages - Reorder & Sort Online - PDF Glow",
+      unlock: "Unlock PDF - Remove Password Online - PDF Glow",
       privacy: "Privacy Policy - PDF Glow",
       terms: "Terms of Service - PDF Glow",
       about: "About Us - PDF Glow",
@@ -156,6 +164,7 @@ function App() {
     { id: 'pdftojpg', label: 'PDF to JPG', icon: Images, fullLabel: 'PDF to JPG' },
     { id: 'rotate', label: 'Rotate', icon: RotateCw, fullLabel: 'Rotate PDF' },
     { id: 'delete', label: 'Delete', icon: Trash2, fullLabel: 'Delete Pages' },
+    { id: 'unlock', label: 'Unlock', icon: Unlock, fullLabel: 'Unlock PDF' }, // Added Tool
     { id: 'watermark', label: 'Watermark', icon: Stamp, fullLabel: 'Watermark' },
     { id: 'pagenumbers', label: 'Numbers', icon: Hash, fullLabel: 'Page Numbers' },
   ];
@@ -234,6 +243,7 @@ function App() {
             {activeView === 'pdftojpg' && <PdfToJpg />}
             {activeView === 'rotate' && <PdfRotate />}
             {activeView === 'delete' && <PdfDeletePages />}
+            {activeView === 'unlock' && <PdfProtect />}
             {activeView === 'watermark' && <PdfWatermark />}
             {activeView === 'pagenumbers' && <PdfPageNumbers />}
             {activeView === 'organize' && <PdfOrganizer />}

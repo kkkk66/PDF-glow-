@@ -1,3 +1,4 @@
+
 import { PDFDocument, degrees as pdfDegrees, rgb, LineCapStyle, StandardFonts } from 'pdf-lib';
 import JSZip from 'jszip';
 import * as pdfjsLibProxy from 'pdfjs-dist';
@@ -6,12 +7,18 @@ import { Document, Packer, Paragraph, TextRun } from 'docx';
 // --- ROBUST PDF.JS INITIALIZATION ---
 // We need to handle different export structures (ESM vs CJS vs Browser Globals)
 let pdfjs: any;
-// Check for default export (common in ESM)
-if ((pdfjsLibProxy as any).default) {
-    pdfjs = (pdfjsLibProxy as any).default;
-} else {
-    // Fallback to the proxy itself (common in some bundlers or CJS)
-    pdfjs = pdfjsLibProxy;
+try {
+  // Check for default export (common in ESM)
+  if (pdfjsLibProxy && (pdfjsLibProxy as any).default) {
+      pdfjs = (pdfjsLibProxy as any).default;
+  } else if (pdfjsLibProxy) {
+      // Fallback to the proxy itself (common in some bundlers or CJS)
+      pdfjs = pdfjsLibProxy;
+  } else {
+      console.error("PDF.js library could not be imported.");
+  }
+} catch (e) {
+  console.error("Error initializing PDF.js proxy:", e);
 }
 
 export const pdfjsLib = pdfjs;
@@ -40,7 +47,7 @@ const handlePdfError = (error: any, defaultMessage: string) => {
   const msg = error.message || error.toString();
   
   if (msg.includes('Password') || msg.includes('Encrypted')) {
-    throw new Error("One or more files are password protected. Please remove the password and try again.");
+    throw new Error("This file is password protected. Please unlock it using the Unlock PDF tool or enter the password.");
   }
   if (msg.includes('Invalid PDF') || msg.includes('FormatError') || msg.includes('worker') || msg.includes('fetch')) {
     throw new Error("File appears corrupted or PDF worker failed to load. Please refresh and try again.");
@@ -463,6 +470,23 @@ export const reorderPdfPages = async (file: File, newOrder: number[]): Promise<U
   } catch (error) {
     handlePdfError(error, "Failed to reorder pages.");
     return new Uint8Array();
+  }
+};
+
+export const unlockPdf = async (file: File, password?: string): Promise<Uint8Array> => {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    // Try loading. If it throws "Password required", we need password.
+    // If password provided, pass it.
+    const options = password ? { password } : undefined;
+    const pdfDoc = await PDFDocument.load(arrayBuffer, options as any);
+    
+    // Saving without options removes encryption
+    return await pdfDoc.save();
+  } catch (error) {
+    // Re-throw with handled message via helper if possible, or just throw
+    // handlePdfError will catch in component
+    throw error;
   }
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 
 interface AdPlaceholderProps {
@@ -16,8 +17,10 @@ export const AdPlaceholder: React.FC<AdPlaceholderProps> = ({
   const adRef = useRef<HTMLModElement>(null);
 
   // Determine if we should show the real ad or the placeholder
-  // We show placeholder if we are in dev OR if the client ID is still the default
-  const isDev = process.env.NODE_ENV === 'development';
+  // Safely check for dev environment
+  const isDev = (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') || 
+                (typeof import.meta !== 'undefined' && import.meta.env?.DEV);
+                
   const isDefaultClient = client === "ca-pub-XXXXXXXXXXXXXXXX";
   const showAd = !isDev && !isDefaultClient;
 
